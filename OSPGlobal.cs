@@ -14,10 +14,10 @@ namespace OrbitalSurveyPlus
         public const string OSP_AUTHOR = "Chase Barnes (Wheffle)";
         public const string OSP_EMAIL = "altoid287@gmail.com";
         public const int VERSION_MAJOR = 2;
-        public const int VERSION_MINOR = 1;
-        public const int VERSION_PATCH = 1;
-        public const string VERSION_KSP = "1.1.2";
-        public static readonly DateTime VERSION_DATE = new DateTime(2016, 5, 5);
+        public const int VERSION_MINOR = 2;
+        public const int VERSION_PATCH = 0;
+        public const string VERSION_KSP = "1.2.1";
+        public static readonly DateTime VERSION_DATE = new DateTime(2016, 11, 1);
 
         public static readonly string VERSION_STRING = 
             VERSION_PATCH > 0 ? 
@@ -246,7 +246,7 @@ namespace OrbitalSurveyPlus
             {
                 if (m.generatorIsActive)
                 {
-                    foreach(ModuleResource r in m.outputList)
+                    foreach(ModuleResource r in m.resHandler.outputResources)
                     {
                         if (r.name == resName) production += r.rate;
                     }
@@ -257,7 +257,7 @@ namespace OrbitalSurveyPlus
             List<ModuleDeployableSolarPanel> solarPanels = v.FindPartModulesImplementing<ModuleDeployableSolarPanel>();
             foreach (ModuleDeployableSolarPanel m in solarPanels)
             {
-                if (m.panelState == ModuleDeployableSolarPanel.panelStates.EXTENDED)
+                if (m.deployState == ModuleDeployablePart.DeployState.EXTENDED)
                 {
                     if (m.resourceName == resName) production += m.chargeRate;
                 }

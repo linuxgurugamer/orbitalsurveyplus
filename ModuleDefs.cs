@@ -168,9 +168,11 @@ namespace OrbitalSurveyPlus
                     {
                         //check electric charge
                         double drain = ElectricDrain * timeElapsed;
-                        Vessel.ActiveResource ar = vessel.GetActiveResource(resEC);
+                        double ecAvailable = 0;
+                        double ecMax = 0;
+                        vessel.GetConnectedResourceTotals(resEC.id, out ecAvailable, out ecMax);
 
-                        if (ar.amount >= ElectricDrain)
+                        if (ecAvailable >= ElectricDrain)
                         {
                             //we are scanning!
                             scanStatus = STATUS_ON;

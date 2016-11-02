@@ -1,0 +1,15 @@
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\bin\Debug\Assembly-CSharp-firstpass.dll
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\bin\Debug\Assembly-CSharp.dll
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\bin\Debug\UnityEngine.dll
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\bin\Debug\TrackIRUnity.dll
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\bin\Debug\UnityEngine.UI.dll
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\bin\Debug\KSPAssets.dll
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\bin\Debug\Mono.Cecil.dll
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\bin\Debug\TDx.TDxInput.dll
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\bin\Debug\Mono.Security.dll
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\bin\Debug\UnityEngine.xml
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\obj\Debug\OrbitalSurveyPlus.csprojResolveAssemblyReference.cache
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\bin\Debug\OrbitalSurveyPlus.dll
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\bin\Debug\OrbitalSurveyPlus.pdb
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\obj\Debug\OrbitalSurveyPlus.dll
+C:\Users\Chase\Repositories\OrbitalSurveyPlus\obj\Debug\OrbitalSurveyPlus.pdb
