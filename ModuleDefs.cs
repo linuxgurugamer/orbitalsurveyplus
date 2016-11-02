@@ -140,12 +140,12 @@ namespace OrbitalSurveyPlus
             }
         }
 
-        public override void OnFixedUpdate()
+        public void FixedUpdate()
         {
             base.OnFixedUpdate();
-
-            if (!OSPGlobal.ExtendedSurvey) return;
-
+            
+            if (!HighLogic.LoadedSceneIsFlight || !OSPGlobal.ExtendedSurvey) return;
+            
             perpetualScan = false;
             if (activated)
             {
