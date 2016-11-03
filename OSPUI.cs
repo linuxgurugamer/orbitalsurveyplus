@@ -29,28 +29,7 @@ namespace OrbitalSurveyPlus
                 primaryInitialize = false;
                 OSPGlobal.Log("Initializing");
 
-                //initialize app buttons
-                appButtonBiomeOverlay = ApplicationLauncher.Instance.AddModApplication(
-                    ShowBiomeOverlay,
-                    ShowBiomeOverlay,
-                    null,
-                    null,
-                    null,
-                    null,
-                    ApplicationLauncher.AppScenes.MAPVIEW | ApplicationLauncher.AppScenes.TRACKSTATION,
-                    GameDatabase.Instance.GetTexture("OrbitalSurveyPlus/Textures/OSPIcon-Biome", false)
-                    );
-
-                appButtonConfigWindow = ApplicationLauncher.Instance.AddModApplication(
-                    ShowConfigWindow,
-                    HideConfigWindow,
-                    null,
-                    null,
-                    HideConfigWindow,
-                    null,
-                    ApplicationLauncher.AppScenes.SPACECENTER,
-                    GameDatabase.Instance.GetTexture("OrbitalSurveyPlus/Textures/OSPIcon-Config", false)
-                    );
+                AddAppButtons();      
 
                 //load settings if config file exists
                 if (System.IO.File.Exists(OSPGlobal.SettingsPath))
@@ -152,6 +131,33 @@ namespace OrbitalSurveyPlus
             //set in-game menu strings
             SetUIStrings();
 
+        }
+
+        public static void AddAppButtons()
+        {                          
+            appButtonBiomeOverlay = ApplicationLauncher.Instance.AddModApplication(
+            ShowBiomeOverlay,
+            ShowBiomeOverlay,
+            null,
+            null,
+            null,
+            null,
+            ApplicationLauncher.AppScenes.MAPVIEW | ApplicationLauncher.AppScenes.TRACKSTATION,
+            GameDatabase.Instance.GetTexture("OrbitalSurveyPlus/Textures/OSPIcon-Biome", false)
+            );
+                
+
+                
+            appButtonConfigWindow = ApplicationLauncher.Instance.AddModApplication(
+            ShowConfigWindow,
+            HideConfigWindow,
+            null,
+            null,
+            HideConfigWindow,
+            null,
+            ApplicationLauncher.AppScenes.SPACECENTER,
+            GameDatabase.Instance.GetTexture("OrbitalSurveyPlus/Textures/OSPIcon-Config", false)
+            );   
         }
 
         public static void ShowBiomeOverlay()
