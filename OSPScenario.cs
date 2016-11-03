@@ -18,6 +18,7 @@ namespace OrbitalSurveyPlus
         {
             base.OnAwake();
             lastScanTime = 0;
+            GameEvents.OnMapEntered.Add(OnMapEnteredCallback);
         }
 
         public override void OnLoad(ConfigNode node)
@@ -179,16 +180,26 @@ namespace OrbitalSurveyPlus
                         lastKnownTextureID = currentOverlays[bodyIndex];
                     }
 
-                    if (body.ResourceMap != null)
+                    if (body.ResourceMap == null)
+                    {
+                        currentOverlays[bodyIndex] = -1;
+                    }
+                    else
                     {
                         if (body.ResourceMap.GetInstanceID() != lastKnownTextureID)
                         {
+                            OSPGlobal.Log("Swapping new texture found with shrouded texture");
                             Texture2D newTexture = ShroudBodyOverlay(body);
                             currentOverlays[bodyIndex] = newTexture.GetInstanceID();
                         }
                     }
                 }
             }
+        }
+
+        public void OnMapEnteredCallback()
+        {
+            currentOverlays.Clear();
         }
 
         public void Update()
