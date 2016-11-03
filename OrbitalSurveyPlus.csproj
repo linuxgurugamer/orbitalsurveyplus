@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="ModuleDefs.cs" />
     <Compile Include="OSPGlobal.cs" />
+    <Compile Include="OSPParams.cs" />
     <Compile Include="OSPScenario.cs" />
     <Compile Include="OSPUI.cs" />
     <Compile Include="ScanDataBody.cs" />

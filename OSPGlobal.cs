@@ -16,7 +16,7 @@ namespace OrbitalSurveyPlus
         public const int VERSION_MAJOR = 2;
         public const int VERSION_MINOR = 2;
         public const int VERSION_PATCH = 0;
-        public const string VERSION_KSP = "1.2.1";
+        public const string VERSION_KSP = "1.2";
         public static readonly DateTime VERSION_DATE = new DateTime(2016, 11, 1);
 
         public static readonly string VERSION_STRING = 
@@ -40,105 +40,61 @@ namespace OrbitalSurveyPlus
         public const string SettingsPath = "GameData/OrbitalSurveyPlus/settings.cfg";
         public const string InfoPath = "GameData/OrbitalSurveyPlus/info.txt";
 
-        public const string sExtendedSurvey = "ExtendedSurvey";
-        public const bool ExtendedSurveyDefault = true;
         public static bool ExtendedSurvey
         {
-            get;
-            set;
-        } = ExtendedSurveyDefault;
+            get { return HighLogic.CurrentGame.Parameters.CustomParams<OSPParamsBasic>().ExtendedSurvey; }
+        }
 
-        public const string sBiomeMapRequiresScan = "BiomeMapRequiresScan";
-        public const bool BiomeMapRequiresScanDefault = true;
         public static bool BiomeMapRequiresScan
         {
-            get;
-            set;
-        } = BiomeMapRequiresScanDefault;
+            get { return HighLogic.CurrentGame.Parameters.CustomParams<OSPParamsBasic>().BiomeMapRequiresScan; }
+        }
 
-        public const string sOverlayRequiresTransmit = "OverlayRequiresTransmit";
-        public const bool OverlayRequiresTransmitDefault = true;
         public static bool OverlayRequiresTransmit
         {
-            get;
-            set;
-        } = OverlayRequiresTransmitDefault;
+            get { return HighLogic.CurrentGame.Parameters.CustomParams<OSPParamsBasic>().OverlayRequiresTransmit; }
+        }
 
-        public const string sBackgroundScan = "BackgroundScan";
-        public const bool BackgroundScanDefault = true;
-        public static bool BackgroundScan
-        {
-            get;
-            set;
-        } = BackgroundScanDefault;
-
-        public const string sScanAutoCompleteThreshold = "ScanAutoCompleteThreshold";
-        public const float ScanAutoCompleteThresholdDefault = 0.95f;
         public static float ScanAutoCompleteThreshold
         {
-            get;
-            set;
-        } = ScanAutoCompleteThresholdDefault;
+            get { return (float) HighLogic.CurrentGame.Parameters.CustomParams<OSPParamsBasic>().ScanAutocompleteThreshold; }
+        }
 
-        public const string sMinAltitudeFactor = "MinAltitudeFactor";
-        public const double MinAltitudeFactorDefault = 0.1;
-        public static double MinAltitudeFactor
+        public static bool BackgroundScan
         {
-            get;
-            set;
-        } = MinAltitudeFactorDefault;
+            get { return HighLogic.CurrentGame.Parameters.CustomParams<OSPParamsAdvanced>().BackgroundScan; }
+        }
 
-        public const string sMinAltitudeAbsolute = "MinAltitudeAbsolute";
-        public const double MinAltitudeAbsoluteDefault = 25000;
-        public static double MinAltitudeAbsolute
-        {
-            get;
-            set;
-        } = MinAltitudeAbsoluteDefault;
-
-        public const string sMaxAltitudeFactor = "MaxAltitudeFactor";
-        public const double MaxAltitudeFactorDefault = 5;
-        public static double MaxAltitudeFactor
-        {
-            get;
-            set;
-        } = MaxAltitudeFactorDefault;
-
-        public const string sMaxAltitudeAbsolute = "MaxAltitudeAbsolute";
-        public const double MaxAltitudeAbsoluteDefault = 15000000;
-        public static double MaxAltitudeAbsolute
-        {
-            get;
-            set;
-        } = MaxAltitudeAbsoluteDefault;
-
-        public const string sTimeBetweenScans = "TimeBetweenScans";
-        public const double TimeBetweenScansDefault = 1;
         public static double TimeBetweenScans
         {
-            get;
-            set;
-        } = TimeBetweenScansDefault;
+            get { return HighLogic.CurrentGame.Parameters.CustomParams<OSPParamsAdvanced>().TimeBetweenScans; }
+        }
+
+        public static double MinAltitudeFactor
+        {
+            get { return 0.1d; }
+        }
+
+        public static double MinAltitudeAbsolute
+        {
+            get { return 25000d; }
+        }
+
+        public static double MaxAltitudeFactor
+        {
+            get { return 5; }
+        }
+
+        public static double MaxAltitudeAbsolute
+        {
+            get { return 15000000d; }
+        }
 
         //DATA ARRAY SIZE CONSTANT DIVISOR
         public const double SCAN_DATA_WIDTH_DIVISOR = 25; //this makes kerbin's data array 300 width, 150 height
         public const double SCAN_DATA_MITS_DIVISOR = 50000; //this makes kerbin's total scanned data 90 mits
 
         //STATIC METHODS
-        public static void ResetSettingsToDefault()
-        {
-            ExtendedSurvey = ExtendedSurveyDefault;
-            BiomeMapRequiresScan = BiomeMapRequiresScanDefault;
-            OverlayRequiresTransmit = OverlayRequiresTransmitDefault;
-            BackgroundScan = BackgroundScanDefault;
-            ScanAutoCompleteThreshold = ScanAutoCompleteThresholdDefault;
-            MinAltitudeFactor = MinAltitudeFactorDefault;
-            MinAltitudeAbsolute = MinAltitudeAbsoluteDefault;
-            MaxAltitudeFactor = MaxAltitudeFactorDefault;
-            MaxAltitudeAbsolute = MaxAltitudeAbsoluteDefault;
-            TimeBetweenScans = TimeBetweenScansDefault;
-        }
-
         public static void GetScanDataArraySize(CelestialBody body, out int width, out int height)
         {
             //width based on body's circumference (2*pi*r), divided by a constant ratio
