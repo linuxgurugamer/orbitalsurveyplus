@@ -1,48 +1,72 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using KSP.UI.Screens;
 
 namespace OrbitalSurveyPlus
 {
-    [KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
+    [KSPAddon(KSPAddon.Startup.AllGameScenes, false)]
     class OSPUI : MonoBehaviour
     {
         private static bool primaryInitialize = true;
+        private static Texture2D iconBiome = null;
 
         private static ApplicationLauncherButton appButtonBiomeOverlay = null;
 
-        public void Awake()
+        protected virtual void Awake()
         {
+            OSPGlobal.Log("Initializing");
+
+            //application launcher stuff
+            GameEvents.onGUIApplicationLauncherReady.Add(AppLancherReadyCallback);
+            GameEvents.onGUIApplicationLauncherUnreadifying.Add(AppLauncherUnreadifyingCallback);
+
             //only do this portion once ever
             if (primaryInitialize)
             {
                 primaryInitialize = false;
-                OSPGlobal.Log("Initializing");
-
-                //application launcher stuff
-                AddAppButtons();      
-
-                //Produce info.txt file
                 Info();
             }
         }
 
-        public static void AddAppButtons()
-        {                          
-            appButtonBiomeOverlay = ApplicationLauncher.Instance.AddModApplication(
-            ShowBiomeOverlay,
-            ShowBiomeOverlay,
-            null,
-            null,
-            null,
-            null,
-            ApplicationLauncher.AppScenes.MAPVIEW | ApplicationLauncher.AppScenes.TRACKSTATION,
-            GameDatabase.Instance.GetTexture("OrbitalSurveyPlus/Textures/OSPIcon-Biome", false)
-            );               
+        protected virtual void OnDestroy()
+        {
+            OSPGlobal.Log("Uninitializing");
+            GameEvents.onGUIApplicationLauncherReady.Remove(AppLancherReadyCallback);
+            GameEvents.onGUIApplicationLauncherUnreadifying.Remove(AppLauncherUnreadifyingCallback);
+        }
+
+        public void AppLancherReadyCallback()
+        {
+            GameScenes scene = HighLogic.LoadedScene;
+            if (scene == GameScenes.MAINMENU || scene == GameScenes.SPACECENTER) return;
+
+            bool hidden;
+            if (ApplicationLauncher.Instance != null && (appButtonBiomeOverlay == null || !ApplicationLauncher.Instance.Contains(appButtonBiomeOverlay, out hidden)))
+            {
+                if (iconBiome == null)
+                {
+                    iconBiome = GameDatabase.Instance.GetTexture("OrbitalSurveyPlus/Textures/OSPIcon-Biome", false);
+                }
+
+                appButtonBiomeOverlay = ApplicationLauncher.Instance.AddModApplication(
+                    ShowBiomeOverlay,
+                    ShowBiomeOverlay,
+                    null,
+                    null,
+                    null,
+                    null,
+                    ApplicationLauncher.AppScenes.MAPVIEW | ApplicationLauncher.AppScenes.TRACKSTATION,
+                    iconBiome
+                );
+            }          
+        }
+
+        public void AppLauncherUnreadifyingCallback(GameScenes scene)
+        {
+            if (ApplicationLauncher.Instance != null && appButtonBiomeOverlay != null)
+            {
+                ApplicationLauncher.Instance.RemoveApplication(appButtonBiomeOverlay);
+            }
         }
 
         public static void ShowBiomeOverlay()
@@ -139,7 +163,7 @@ namespace OrbitalSurveyPlus
             ConfigNode settings = file.AddNode("INFO");
 
             settings.AddValue("Name", OSPGlobal.OSP_TITLE);
-            settings.AddValue("Version", OSPGlobal.VERSION_STRING);
+            settings.AddValue("Version", OSPGlobal.VERSION_STRING_VERBOSE);
             settings.AddValue("ReleaseDate", OSPGlobal.VERSION_DATE.ToLongDateString());
             settings.AddValue("KSP", OSPGlobal.VERSION_KSP);
             settings.AddValue("Author", OSPGlobal.OSP_AUTHOR);
