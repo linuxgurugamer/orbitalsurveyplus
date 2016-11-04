@@ -14,11 +14,10 @@ namespace OrbitalSurveyPlus
 
         protected virtual void Awake()
         {
-            OSPGlobal.Log("Initializing");
-
-            //application launcher stuff
+            //subscribe to app launcher events
             GameEvents.onGUIApplicationLauncherReady.Add(AppLancherReadyCallback);
-            GameEvents.onGUIApplicationLauncherUnreadifying.Add(AppLauncherUnreadifyingCallback);
+            GameEvents.onGUIApplicationLauncherDestroyed.Add(AppLauncherDestroyedCallback);
+            GameEvents.onGameSceneLoadRequested.Add(AppLauncherSceneLoadCallback);
 
             //only do this portion once ever
             if (primaryInitialize)
@@ -30,18 +29,31 @@ namespace OrbitalSurveyPlus
 
         protected virtual void OnDestroy()
         {
-            OSPGlobal.Log("Uninitializing");
+            //unsubscrite to app launcher events
             GameEvents.onGUIApplicationLauncherReady.Remove(AppLancherReadyCallback);
-            GameEvents.onGUIApplicationLauncherUnreadifying.Remove(AppLauncherUnreadifyingCallback);
-        }
+            GameEvents.onGUIApplicationLauncherDestroyed.Remove(AppLauncherDestroyedCallback);
+            GameEvents.onGameSceneLoadRequested.Remove(AppLauncherSceneLoadCallback);
+            AppLauncherRemoveButtons();
+        }      
 
         public void AppLancherReadyCallback()
         {
-            GameScenes scene = HighLogic.LoadedScene;
-            if (scene == GameScenes.MAINMENU || scene == GameScenes.SPACECENTER) return;
+            AppLauncherAddButtons();        
+        }
 
-            bool hidden;
-            if (ApplicationLauncher.Instance != null && (appButtonBiomeOverlay == null || !ApplicationLauncher.Instance.Contains(appButtonBiomeOverlay, out hidden)))
+        public void AppLauncherDestroyedCallback()
+        {
+            AppLauncherRemoveButtons();           
+        }
+
+        public void AppLauncherSceneLoadCallback(GameScenes scene)
+        {
+            AppLauncherRemoveButtons();
+        }
+
+        public void AppLauncherAddButtons()
+        {
+            if (ApplicationLauncher.Ready && appButtonBiomeOverlay == null)
             {
                 if (iconBiome == null)
                 {
@@ -58,14 +70,15 @@ namespace OrbitalSurveyPlus
                     ApplicationLauncher.AppScenes.MAPVIEW | ApplicationLauncher.AppScenes.TRACKSTATION,
                     iconBiome
                 );
-            }          
+            }
         }
 
-        public void AppLauncherUnreadifyingCallback(GameScenes scene)
+        public void AppLauncherRemoveButtons()
         {
-            if (ApplicationLauncher.Instance != null && appButtonBiomeOverlay != null)
+            if (appButtonBiomeOverlay != null)
             {
-                ApplicationLauncher.Instance.RemoveApplication(appButtonBiomeOverlay);
+                ApplicationLauncher.Instance.RemoveModApplication(appButtonBiomeOverlay);
+                appButtonBiomeOverlay = null;
             }
         }
 

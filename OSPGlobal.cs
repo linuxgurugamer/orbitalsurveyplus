@@ -14,7 +14,7 @@ namespace OrbitalSurveyPlus
         public const int VERSION_MINOR = 2;
         public const int VERSION_PATCH = 0;
         public const string VERSION_KSP = "1.2";
-        public static readonly DateTime VERSION_DATE = new DateTime(2016, 11, 1);
+        public static readonly DateTime VERSION_DATE = new DateTime(2016, 11, 3);
 
         public static readonly string VERSION_STRING = 
             VERSION_PATCH > 0 ? 
