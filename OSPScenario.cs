@@ -80,12 +80,16 @@ namespace OrbitalSurveyPlus
                 for (int i = 0; i < width; i++)
                 {
                     //get point corresponding with the current texture pixel
-                    int point_x = Math.Min((int)Math.Round(i / scalex), dataWidth - 1);
-                    int point_y = Math.Min((int)Math.Round(j / scaley), dataHeight - 1);
+                    //int point_x = Math.Min((int)Math.Round(i / scalex), dataWidth - 1);
+                    //int point_y = Math.Min((int)Math.Round(j / scaley), dataHeight - 1);
+
+                    double lon = OSPGlobal.XToLongitude(i, width);
+                    double lat = OSPGlobal.YToLatitude(j, height);
 
                     //decide whether to reveal this pixel
                     Color32 pixel = ProduceShroudedPixel();
-                    if (data.IsPointRevealed(point_x, point_y))
+                    //if (data.IsPointRevealed(point_x, point_y))
+                    if (data.IsCellScanned(lon, lat))
                     {
                         pixel = oldColors[(j * width) + i];
                     }
@@ -154,12 +158,12 @@ namespace OrbitalSurveyPlus
             overlay.Apply();
 
             body.SetResourceMap(overlay);
-            setCurrentKnownOverlay(body, overlay.GetInstanceID());
+            setCurrentKnownOverlay(body, overlay.GetHashCode());
         }
 
-        public static void setCurrentKnownOverlay(CelestialBody body, int textureInstanceID)
+        public static void setCurrentKnownOverlay(CelestialBody body, int textureHash)
         {
-            currentOverlays[body.flightGlobalsIndex] = textureInstanceID;
+            currentOverlays[body.flightGlobalsIndex] = textureHash;
         }
 
         public void LateUpdate()
@@ -170,10 +174,10 @@ namespace OrbitalSurveyPlus
                 foreach (CelestialBody body in FlightGlobals.Bodies)
                 {
                     int bodyIndex = body.flightGlobalsIndex;
-                    int lastKnownTextureID = -1;
+                    int lastKnownTextureHash = -1;
                     if (currentOverlays.ContainsKey(bodyIndex))
                     {
-                        lastKnownTextureID = currentOverlays[bodyIndex];
+                        lastKnownTextureHash = currentOverlays[bodyIndex];
                     }
 
                     if (body.ResourceMap == null)
@@ -181,11 +185,12 @@ namespace OrbitalSurveyPlus
                         currentOverlays[bodyIndex] = -1;
                     }
                     else
-                    {
-                        if (body.ResourceMap.GetInstanceID() != lastKnownTextureID)
+                    {                        
+                        if (body.ResourceMap.GetHashCode() != lastKnownTextureHash)
                         {
+                            OSPGlobal.Log("Current ID: " + body.ResourceMap.GetHashCode());
+                            OSPGlobal.Log("Known ID: " + lastKnownTextureHash);
                             Texture2D newTexture = ShroudBodyOverlay(body);
-                            //currentOverlays[bodyIndex] = newTexture.GetInstanceID();
                             currentOverlays[bodyIndex] = newTexture.GetHashCode();
                         }
                     }

@@ -24,6 +24,9 @@ namespace OrbitalSurveyPlus
         public static readonly string VERSION_STRING_VERBOSE = VERSION_MAJOR + "." + VERSION_MINOR + "." + VERSION_PATCH;
         //--------------------------------------------------------------------------------------------------------
 
+        //GENERAL
+        public const int GridLevel = 4;
+
         //NODE STUFF
         public const string OSPVersionName = "version";
         public const string OSPScanDataNodeName = "OSPScanData";
@@ -132,6 +135,19 @@ namespace OrbitalSurveyPlus
             return (int)Math.Round(scale * width);
         }
 
+        public static double XToLongitude(int x, int width)
+        {
+            //shift x because ksp's system is weird
+            x = (x + (width / 4)) % width;
+
+            //get a ratio between -1 and 1, 0 being in the middle
+            double ratio = 1 - ((double)x / width);
+            ratio = (ratio * 2) - 1;
+
+            //longitude is a value between -180 and 180, so just multiply and return
+            return ratio * 180;
+        }
+
         public static int latitudeToY(double lat, int height)
         {
             //lat starts out between -90 and 90
@@ -141,6 +157,16 @@ namespace OrbitalSurveyPlus
             //find pixel based on scale
             double scale = lat / 180;
             return (int)Math.Round(scale * height);
+        }
+
+        public static double YToLatitude(int y, int height)
+        {
+            //get a ratio between -1 and 1, 0 being in the middle
+            double ratio = (double)y / height;
+            ratio = (ratio * 2) - 1;
+
+            //latitude is a value between -90 and 90, so just multiply and return
+            return ratio * 90;
         }
 
         public static bool withinDistance(double x1, double y1, double x2, double y2, double dist)

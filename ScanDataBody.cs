@@ -1,4 +1,5 @@
 ﻿using System;
+using GeodesicGrid;
 
 namespace OrbitalSurveyPlus
 {
@@ -6,6 +7,7 @@ namespace OrbitalSurveyPlus
     {
         private static readonly char TAG_100PERCENT = 'X';
 
+        private CellSet cells;
         public bool[,] ScannedMap;  //how much of the planet has been scanned
         public bool[,] RevealedMap; //how much of the overlays are revealed (scanned + transmitted)
 
@@ -70,6 +72,8 @@ namespace OrbitalSurveyPlus
 
         private void Initialize()
         {
+            cells = new CellSet(OSPGlobal.GridLevel);
+
             /*
                 represent the scan data as a 2D boolean array (false = unscanned, true = scanned)
                 instead of representing each pixel, data is divided into sections so that save/load won't take 15 minutes
@@ -152,6 +156,23 @@ namespace OrbitalSurveyPlus
 
         public void UpdateScanData(bool isScanned, double lon, double lat, int radius)
         {
+            Cell cell = Cell.Containing(Body.GetSurfaceNVector(lat, lon), OSPGlobal.GridLevel);
+            cells[cell] = isScanned;
+            //UpdateCellData(cell, isScanned, radius);
+            foreach (Cell c in cell.GetNeighbors(OSPGlobal.GridLevel))
+            {
+                cells[c] = isScanned;
+                //UpdateCellData(c, isScanned, radius);
+            }
+        }
+
+        public void UpdateCellData(Cell cell, bool isScanned, int radius)
+        {
+            cells[cell] = isScanned;
+
+            double lon = Body.GetLongitude(cell.Position);
+            double lat = Body.GetLatitude(cell.Position);
+            
             //find the data point that matches the given lon and lat
             int point_x = OSPGlobal.longitudeToX(lon, Width);
             int point_y = OSPGlobal.latitudeToY(lat, Height);
@@ -169,12 +190,12 @@ namespace OrbitalSurveyPlus
             int stretchOffset = (int)Math.Round((double)radius * stretchFactor);
             int point_x_west = point_x - stretchOffset;
             int point_x_east = point_x + stretchOffset;
-
+            
             /*
                 the stretch offset basically creates two more circles of scan east and west of the
                 actual scan point to try to mitigate width shrinkage as you approach the poles
             */
-
+            
             //update data point and surrounding data points in radius
             for (int j = -radius; j <= radius; j++)
             {
@@ -183,10 +204,14 @@ namespace OrbitalSurveyPlus
                     int x = point_x + i;
                     int y = point_y + j;
 
+                    double nLon = OSPGlobal.XToLongitude(x, Width);
+                    double nLat = OSPGlobal.YToLatitude(y, Height);
+
                     //check total distance to see if it's within radius (or stretch points)
-                    if (OSPGlobal.withinDistance(point_x, point_y, x, y, radius) ||
+                    if ((OSPGlobal.withinDistance(point_x, point_y, x, y, radius) ||
                         OSPGlobal.withinDistance(point_x_west, point_y, x, y, radius) ||
-                        OSPGlobal.withinDistance(point_x_east, point_y, x, y, radius))
+                        OSPGlobal.withinDistance(point_x_east, point_y, x, y, radius)) &&
+                        cell.Contains(Body.GetSurfaceNVector(nLat, nLon), OSPGlobal.GridLevel))
                     {
                         //wrap east-west
                         if (x < 0)
@@ -225,7 +250,7 @@ namespace OrbitalSurveyPlus
                     }
                 }
             }
-
+            
             //update scan percent field
             ScanPercent = GetScanPercent();
 
@@ -235,7 +260,7 @@ namespace OrbitalSurveyPlus
                 FillArray(ref ScannedMap, true);
                 ScanPercent = 1;
             }
-
+            
         }
 
         public void SetScannedMap(bool[,] array)
@@ -278,6 +303,12 @@ namespace OrbitalSurveyPlus
         public float GetTotalMits()
         {
             return OSPGlobal.GetScanDataTotalMits(Body);
+        }
+
+        public bool IsCellScanned(double lon, double lat)
+        {
+            Cell c = Cell.Containing(Body.GetSurfaceNVector(lat, lon), OSPGlobal.GridLevel);
+            return cells[c];
         }
 
         public bool IsPointScanned(int x, int y)
