@@ -1,13 +1,13 @@
 ﻿using System;
-using GeodesicGrid;
+using System.Text;
 
 namespace OrbitalSurveyPlus
 {
     class ScanDataBody
     {
         private static readonly char TAG_100PERCENT = 'X';
+        private static readonly char TAG_COMPRESSION_DELIMITER = ',';
 
-        private CellSet cells;
         public bool[,] ScannedMap;  //how much of the planet has been scanned
         public bool[,] RevealedMap; //how much of the overlays are revealed (scanned + transmitted)
 
@@ -72,8 +72,6 @@ namespace OrbitalSurveyPlus
 
         private void Initialize()
         {
-            cells = new CellSet(OSPGlobal.GridLevel);
-
             /*
                 represent the scan data as a 2D boolean array (false = unscanned, true = scanned)
                 instead of representing each pixel, data is divided into sections so that save/load won't take 15 minutes
@@ -121,11 +119,14 @@ namespace OrbitalSurveyPlus
             else if (serializedHex[0] == TAG_100PERCENT)
             {
                 FillArray(ref ScannedMap, true);
+                ScanPercent = 1;
             }
             else
             {
                 LoadArrayFromString(ref ScannedMap, serializedHex);
+                ScanPercent = GetScanPercent();
             }
+            
         }
 
         public void LoadRevealedMap(string serializedHex)
@@ -156,63 +157,73 @@ namespace OrbitalSurveyPlus
 
         public void UpdateScanData(bool isScanned, double lon, double lat, int radius)
         {
-            Cell cell = Cell.Containing(Body.GetSurfaceNVector(lat, lon), OSPGlobal.GridLevel);
-            cells[cell] = isScanned;
-            //UpdateCellData(cell, isScanned, radius);
-            foreach (Cell c in cell.GetNeighbors(OSPGlobal.GridLevel))
-            {
-                cells[c] = isScanned;
-                //UpdateCellData(c, isScanned, radius);
-            }
-        }
-
-        public void UpdateCellData(Cell cell, bool isScanned, int radius)
-        {
-            cells[cell] = isScanned;
-
-            double lon = Body.GetLongitude(cell.Position);
-            double lat = Body.GetLatitude(cell.Position);
-            
             //find the data point that matches the given lon and lat
             int point_x = OSPGlobal.longitudeToX(lon, Width);
             int point_y = OSPGlobal.latitudeToY(lat, Height);
 
             //clamp the scan radius to be at max a factor of the data width
             int max_radius = Width / 7;
-            if (radius*2 > max_radius) radius = max_radius;
+            if (radius > max_radius) radius = max_radius;
 
-            //get half width and half height for calculations
+            //get half width and half height for calculations (useful values)
             int half_width = Width / 2;
             int half_height = Height / 2;
 
-            //calculate stretch offset (the scan area tends to get skinnier as it nears the poles, this helps mitigate that)
-            double stretchFactor = Math.Abs((double)point_y - (double)half_height) / (double)half_height;
-            int stretchOffset = (int)Math.Round((double)radius * stretchFactor);
-            int point_x_west = point_x - stretchOffset;
-            int point_x_east = point_x + stretchOffset;
-            
-            /*
-                the stretch offset basically creates two more circles of scan east and west of the
-                actual scan point to try to mitigate width shrinkage as you approach the poles
-            */
-            
-            //update data point and surrounding data points in radius
-            for (int j = -radius; j <= radius; j++)
+            /*****************************************************************************************
+                Form ellipse from scan radius, based on latitude, which will be our field of view.
+                Since the width of the cells effectively shrink as you near the poles but the height
+                stays the same, the scan area in the x-direction (longetudenal) needs to bloat to
+                keep the scan area on the globe consistent. At the equator it is perfectly circular.
+            *****************************************************************************************/
+
+            //calculate some useful values
+            int distFromEquator = Math.Abs(point_y - half_height);
+            double dEq2 = distFromEquator * distFromEquator;
+            double halfH2 = half_height * half_height;
+
+            //semi minor axis (y radius of scan area) is always simply the radius, it doesn't undergo distrotion
+            int semiMinorAxis = radius;
+
+            //semi major axis (x radius of scan area) gets distorted as latitude gets higher (it appears to shrink)
+            //we use Mercator projection scaling to correct for this 
+            int semiMajorAxis = half_width;
+            if (Math.Abs(lat) < 90) //to avoid division by zero, only use scaling if latitude is less than exactly 90
             {
-                for (int i = -radius-stretchOffset; i <= radius+stretchOffset; i++)
-                {
-                    int x = point_x + i;
-                    int y = point_y + j;
+                double scaleFactor = OSPGlobal.MercatorScaleFactor(lat);
+                semiMajorAxis = (int)Math.Round(radius * scaleFactor);
+                if (semiMajorAxis > half_width) semiMajorAxis = half_width; //clamp to width of map
+            }
 
-                    double nLon = OSPGlobal.XToLongitude(x, Width);
-                    double nLat = OSPGlobal.YToLatitude(y, Height);
+            //calculate squares of these values, to be used later
+            double semiMinorAxis2 = semiMinorAxis * semiMinorAxis;
+            double semiMajorAxis2 = semiMajorAxis * semiMajorAxis;
 
-                    //check total distance to see if it's within radius (or stretch points)
-                    if ((OSPGlobal.withinDistance(point_x, point_y, x, y, radius) ||
-                        OSPGlobal.withinDistance(point_x_west, point_y, x, y, radius) ||
-                        OSPGlobal.withinDistance(point_x_east, point_y, x, y, radius)) &&
-                        cell.Contains(Body.GetSurfaceNVector(nLat, nLon), OSPGlobal.GridLevel))
+            //search in a rectangle that encompasses the ellipse and check to see if each point is inside the ellipse
+            for (int j = -semiMinorAxis; j <= semiMinorAxis; j++)
+            {
+                for (int i = -semiMajorAxis; i <= semiMajorAxis; i++)
+                {                   
+                    //check to see if in bounds of scan ellipse
+                    //if val <= 1, the point is inside the ellipse
+
+                    /********************************************************************************************
+                        The actual equation for checking if a point is bounded by an ellipse is this:
+
+                        ((x - center_x)*(x - center_x) / Rx*Rx) + ((y - center_y)*(y-center_y) / Ry*Ry) <= 1
+
+                        Due to the nature of how x and point_x (our center_x) are related to i in this way:
+                        x - point_x = i
+                        We can do a nice substitution to keep things fast and simple. Same goes with j.
+                    *********************************************************************************************/
+
+                    double val = ((i * i) / semiMajorAxis2) + ((j* j) / semiMinorAxis2);
+
+                    if (val <= 1)
                     {
+                        //get actual point that has been scanned
+                        int x = point_x + i;
+                        int y = point_y + j;
+
                         //wrap east-west
                         if (x < 0)
                         {
@@ -232,7 +243,7 @@ namespace OrbitalSurveyPlus
                         }
                         else if (y >= Height)
                         {
-                            y = Height + (Height - (y+1));
+                            y = Height + (Height - (y + 1));
                             x += half_width;
                             if (x >= Width) x -= Width;
                         }
@@ -249,10 +260,7 @@ namespace OrbitalSurveyPlus
                         }
                     }
                 }
-            }
-            
-            //update scan percent field
-            ScanPercent = GetScanPercent();
+            }            
 
             //if scan percent is >=95% (default), give 'em the rest!
             if (ScanPercent >= OSPGlobal.ScanAutoCompleteThreshold)
@@ -260,7 +268,11 @@ namespace OrbitalSurveyPlus
                 FillArray(ref ScannedMap, true);
                 ScanPercent = 1;
             }
-            
+            else
+            {
+                ScanPercent = GetScanPercent();
+            }
+
         }
 
         public void SetScannedMap(bool[,] array)
@@ -305,12 +317,6 @@ namespace OrbitalSurveyPlus
             return OSPGlobal.GetScanDataTotalMits(Body);
         }
 
-        public bool IsCellScanned(double lon, double lat)
-        {
-            Cell c = Cell.Containing(Body.GetSurfaceNVector(lat, lon), OSPGlobal.GridLevel);
-            return cells[c];
-        }
-
         public bool IsPointScanned(int x, int y)
         {
             return ScannedMap[x, y];
@@ -337,6 +343,9 @@ namespace OrbitalSurveyPlus
 
         private void LoadArrayFromString(ref bool[,] arrayToLoad, string serializedHex)
         {
+            //decompress hex string in case it is compressed
+            serializedHex = UncompressHexString(serializedHex);
+
             int w = arrayToLoad.GetLength(0);
             int h = arrayToLoad.GetLength(1);
 
@@ -397,7 +406,7 @@ namespace OrbitalSurveyPlus
                 serializedHex += OSPGlobal.BinaryToHex(bin);
             }
 
-            return serializedHex;
+            return CompressHexString(serializedHex);
         }
 
         private void FillArray(ref bool[,] arrayToFill, bool value)
@@ -416,18 +425,89 @@ namespace OrbitalSurveyPlus
             int w = array.GetLength(0);
             int h = array.GetLength(1);
 
-            double total = w * h;
+            double total = 0;
             double totalCovered = 0;
 
             for (int j = 0; j < h; j++)
             {
+                double lat = OSPGlobal.YToLatitude(j, h);
+                double scale = OSPGlobal.MercatorScaleFactor(lat);
+                double area = (1 / scale); //each area is "1x1", but the width must be scaled
                 for (int i = 0; i < w; i++)
                 {
-                    if (array[i, j]) totalCovered += 1;
+                    total += area;
+                    if (array[i, j]) totalCovered += area;
                 }
             }
 
             return totalCovered / total;
+        }
+
+        private string CompressHexString(string uncompressed)
+        {
+            if (uncompressed.Length == 0) return uncompressed;
+
+            StringBuilder sb = new StringBuilder();
+
+            char c = uncompressed[0];
+            int num = 1;
+            for (int i = 1; i < uncompressed.Length; i++)
+            {
+                char next = uncompressed[i];
+                if (next.Equals(c))
+                {
+                    num++;
+                }
+                else
+                {                   
+                    sb.Append(num.ToString("X")); //number of times character appears in a row      
+                    sb.Append(TAG_COMPRESSION_DELIMITER);                    
+                    sb.Append(c); //the character
+                    sb.Append(TAG_COMPRESSION_DELIMITER);
+
+                    c = next;
+                    num = 1;
+                }
+            }
+
+            //get the last letter
+            sb.Append(num.ToString("X"));      
+            sb.Append(TAG_COMPRESSION_DELIMITER);
+            sb.Append(c);
+
+            return sb.ToString();
+        }
+
+        private string UncompressHexString(string compressed)
+        {
+            const byte MODE_NUM = 0;
+            const byte MODE_CHAR = 1;
+
+            if (compressed.Length == 0) return compressed;
+            if (!compressed.Contains(TAG_COMPRESSION_DELIMITER.ToString())) return compressed;           
+
+            string[] array = compressed.Split(TAG_COMPRESSION_DELIMITER);
+
+            StringBuilder sb = new StringBuilder();
+            byte mode = MODE_NUM;
+            int num = 0;
+            for (int i = 0; i < array.Length; i++)
+            {
+                switch(mode)
+                {
+                    case MODE_NUM:
+                        num = int.Parse(array[i], System.Globalization.NumberStyles.HexNumber);
+                        mode = MODE_CHAR;
+                        break;
+
+                    case MODE_CHAR:
+                        for (int j = 0; j < num; j++) sb.Append(array[i]);
+                        mode = MODE_NUM;
+                        break;
+                }
+            }
+
+            return sb.ToString();
         }
     }
 }

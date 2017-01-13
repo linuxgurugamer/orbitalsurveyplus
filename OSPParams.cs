@@ -74,14 +74,25 @@ namespace OrbitalSurveyPlus
             get{return "Advanced Settings";}
         }
 
+        [GameParameters.CustomParameterUI("Auto-Refresh Overlays",
+            toolTip = "Automatically refresh overlay map with new scan data when reasonable.")]
+        public bool AutoRefresh = true;
 
         [GameParameters.CustomParameterUI("Enable Background Scan",
-        toolTip = "Disabling this will completely shut off any background scanning (only active vessels will scan).")]
+            toolTip = "Disabling this will completely shut off any background scanning (only active vessels will scan).")]
         public bool BackgroundScan = true;
 
         [GameParameters.CustomIntParameterUI("Time Between Scans (sec)", minValue = 1, maxValue = 10,
             toolTip = "Time (seconds) between scan updates on scanning vessels (both active and background).")]
-        public int TimeBetweenScans = 1;
+        public int TimeBetweenScans = 3;
+
+        [GameParameters.CustomParameterUI("Retroactive Scanning",
+            toolTip = "Attempts to fill in gaps in scanning that occur at high warp speeds by checking past orbital positions.")]
+        public bool RetroactiveScanning = true;
+
+        [GameParameters.CustomIntParameterUI("Processing Load", minValue = 1, maxValue = 100,
+            toolTip = "The number of backlogged scans (usually queued by retroactive scanning) processed per game update.")]
+        public int ProcessingLoad = 2;
 
         /* 
             //These numbers are too huge and wonky to comfortably put in the settings menu, for now they will be stuck at default

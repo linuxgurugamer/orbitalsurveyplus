@@ -50,6 +50,7 @@ namespace OrbitalSurveyPlus
         private bool transmitting;
         private ScanDataBody lastTransmitBodyData;
         private bool[,] lastTransmitScanMap;
+        private double lastScanPct = 0;
 
         private CelestialBody currentBody;
 
@@ -124,8 +125,9 @@ namespace OrbitalSurveyPlus
                     freshStart = false;
                     currentBody = vessel.mainBody;
                     SetAltitudeHelp();
+                    UpdateScanInfo();
                     SetUIVisibility();
-                    if (OSPGlobal.ExtendedSurvey) DisableStockSurveyor();
+                    if (OSPGlobal.ExtendedSurvey) DisableStockSurveyor();                    
                 }
 
                 if (vessel.mainBody != currentBody)
@@ -138,15 +140,14 @@ namespace OrbitalSurveyPlus
         }
 
         public void FixedUpdate()
-        {
-            base.OnFixedUpdate();
-            
+        {            
             if (!HighLogic.LoadedSceneIsFlight || !OSPGlobal.ExtendedSurvey) return;
             
             perpetualScan = false;
             if (activated)
             {
                 scanStatus = STATUS_OFF;
+                UpdateScanInfo();
 
                 if (scannerOn)
                 {
@@ -176,13 +177,11 @@ namespace OrbitalSurveyPlus
 
                             if (lastScan + OSPGlobal.TimeBetweenScans <= ut)
                             {
-                                lastScan = ut;
 
                                 //update scan
-                                OSPScenario.UpdateScanData(vessel.mainBody, true, vessel.longitude, vessel.latitude, ScanRadius);
-
-                                //update percent scanned and available data
-                                UpdateScanInfo();
+                                if (lastScan == 0) OSPScenario.QueueScanRequest(vessel, vessel.mainBody, vessel.longitude, vessel.latitude, true, ScanRadius);
+                                else OSPScenario.QueueScanRequestReroactive(vessel, true, ScanRadius, lastScan);
+                                lastScan = ut;
                             }
 
                             //for now, assume perpetual scanning
@@ -294,11 +293,12 @@ namespace OrbitalSurveyPlus
 
         private void UpdateScanInfo()
         {
-            double scanPct = GetScanPercentCurrentBody(); ;
+            if (lastScanPct == GetScanPercentCurrentBody()) return;
+            lastScanPct = GetScanPercentCurrentBody();
             float mitsAvailable = GetAvailableMitsCurrentBody();
 
             //update scan percent field
-            int pct = (int)Math.Floor(scanPct * 100);
+            int pct = (int)Math.Floor(lastScanPct * 100);
             percentScanned = pct.ToString() + "%";
 
             //update available science field
@@ -320,9 +320,13 @@ namespace OrbitalSurveyPlus
                 return false;
             }
 
-            if (body.flightGlobalsIndex == 0)
+            if (!OSPGlobal.BodyCanBeScanned(body))
             {
-                scanStatus = "blinded by the light";
+                if (body.flightGlobalsIndex == 0)
+                    scanStatus = "blinded by the light";
+                else
+                    scanStatus = "unable to scan target";
+
                 return false;
             }
 
@@ -397,9 +401,14 @@ namespace OrbitalSurveyPlus
         private ScienceData GetScienceData(CelestialBody body, float mits)
         {
             //subject ID will hold the instance ID of the module that started the transmission
-            string subject = GetInstanceID().ToString();
+            string subject = GetOSPScienceSubject();
             ScienceData sd = new ScienceData(mits, 1, 0, subject, "Orbital survey data from " + body.name, true);
             return sd;
+        }
+
+        private string GetOSPScienceSubject()
+        {
+            return "OrbitalSurveyPlus@"+GetInstanceID().ToString();
         }
 
         public void TransmitScienceCallback(ScienceData sd, Vessel v, bool transmitFailed)
@@ -407,8 +416,11 @@ namespace OrbitalSurveyPlus
             try
             {
                 //extract the instance id from the subjectID of the ScienceData
-                int id;
-                bool a = int.TryParse(sd.subjectID, out id);
+                int id = 0;
+                bool a = false;
+                string[] splitSubject = sd.subjectID.Split('@');
+                if (splitSubject.Length > 1) { a = int.TryParse(splitSubject[1], out id); }
+
                 if (!a)
                 {
                     OSPGlobal.Log("ERROR: TransmitScienceCallback recieved a bad value in science data subject");
@@ -434,7 +446,7 @@ namespace OrbitalSurveyPlus
                     
                     //unlock this body's orbital maps if not already done so
                     ResourceMap.Instance.UnlockPlanet(lastTransmitBodyData.Body.flightGlobalsIndex);
-                    
+                    OSPScenario.RefreshBodyOverlay(lastTransmitBodyData.Body, true);                    
                 }
             }
             catch (Exception e)

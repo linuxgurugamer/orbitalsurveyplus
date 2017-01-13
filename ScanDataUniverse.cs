@@ -155,6 +155,19 @@ namespace OrbitalSurveyPlus
             return null;
         }
 
+        public double GetBodyScanPercent(int bodyIndex)
+        {
+            ScanDataBody data = GetBodyScanData(bodyIndex);
+            if (data == null) return 0;
+            return data.ScanPercent;
+        }
+
+        public bool BodyIsFullyScanned(int bodyIndex)
+        {
+            if (GetBodyScanPercent(bodyIndex) < 1) return false;
+            return true;
+        }
+
         public void UpdateScanData(CelestialBody body, bool scanned, double lon, double lat, int radius)
         {
             //get existing data, or create new one if none exist

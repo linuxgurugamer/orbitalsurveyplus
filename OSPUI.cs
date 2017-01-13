@@ -137,18 +137,22 @@ namespace OrbitalSurveyPlus
                 return;
             }
 
-            //overlay switch
+            //overlay switch            
             if (body.ResourceMap != null)
             {
                 //turn off
                 body.SetResourceMap(null);
+                body.HideSurfaceResource();
             }
             else if (OSPGlobal.ExtendedSurvey && OSPGlobal.BiomeMapRequiresScan)
             {
+                body.HideSurfaceResource();
+
                 //turn on and shroud basnd on survey data
                 int biomeWidth;
                 int biomeHeight;
                 Color32[] oldColors = OSPGlobal.GetPixels32FromBiomeMap(body, out biomeWidth, out biomeHeight);
+                OSPScenario.UpdateBodyFullOverlayCache(body, oldColors);
                 ScanDataBody data = OSPScenario.GetBodyScanData(body);
                 Color32[] newColors = OSPScenario.ShroudColor32Array(oldColors, biomeWidth, biomeHeight, data);
                 
@@ -156,10 +160,7 @@ namespace OrbitalSurveyPlus
                 newTexture.SetPixels32(newColors);
                 newTexture.Apply();
 
-                OSPScenario.setCurrentKnownOverlay(body, newTexture.GetInstanceID());
                 body.SetResourceMap(newTexture);
-                
-                //OSPScenario.ShowScannedRegionsOverlay(body); //(DEBUGGING)
             }
             else
             {

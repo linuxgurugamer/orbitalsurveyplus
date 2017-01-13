@@ -11,21 +11,22 @@ namespace OrbitalSurveyPlus
         public const string OSP_AUTHOR = "Chase Barnes (Wheffle)";
         public const string OSP_EMAIL = "altoid287@gmail.com";
         public const int VERSION_MAJOR = 2;
-        public const int VERSION_MINOR = 2;
-        public const int VERSION_PATCH = 0;
+        public const int VERSION_MINOR = 3;
+        public const int VERSION_PATCH = 2;
+        public const int VERSION_DEV = 1;
         public const string VERSION_KSP = "1.2";
-        public static readonly DateTime VERSION_DATE = new DateTime(2016, 11, 3);
+        public static readonly DateTime VERSION_DATE = new DateTime(2016, 12, 11);
+
+        public static readonly string VERSION_DEV_STRING =
+            VERSION_DEV > 0 ? " (dev " + VERSION_DEV + ")" : "";
 
         public static readonly string VERSION_STRING = 
             VERSION_PATCH > 0 ? 
-            VERSION_MAJOR + "." + VERSION_MINOR + "." + VERSION_PATCH : 
-            VERSION_MAJOR + "." + VERSION_MINOR;
+            VERSION_MAJOR + "." + VERSION_MINOR + "." + VERSION_PATCH + VERSION_DEV_STRING : 
+            VERSION_MAJOR + "." + VERSION_DEV_STRING;
 
-        public static readonly string VERSION_STRING_VERBOSE = VERSION_MAJOR + "." + VERSION_MINOR + "." + VERSION_PATCH;
+        public static readonly string VERSION_STRING_VERBOSE = VERSION_MAJOR + "." + VERSION_MINOR + "." + VERSION_PATCH + VERSION_DEV_STRING;
         //--------------------------------------------------------------------------------------------------------
-
-        //GENERAL
-        public const int GridLevel = 4;
 
         //NODE STUFF
         public const string OSPVersionName = "version";
@@ -60,6 +61,11 @@ namespace OrbitalSurveyPlus
             get { return (float) HighLogic.CurrentGame.Parameters.CustomParams<OSPParamsBasic>().ScanAutocompleteThreshold; }
         }
 
+        public static bool AutoRefresh
+        {
+            get { return HighLogic.CurrentGame.Parameters.CustomParams<OSPParamsAdvanced>().AutoRefresh; }
+        }
+
         public static bool BackgroundScan
         {
             get { return HighLogic.CurrentGame.Parameters.CustomParams<OSPParamsAdvanced>().BackgroundScan; }
@@ -68,6 +74,16 @@ namespace OrbitalSurveyPlus
         public static double TimeBetweenScans
         {
             get { return HighLogic.CurrentGame.Parameters.CustomParams<OSPParamsAdvanced>().TimeBetweenScans; }
+        }
+
+        public static bool RetroactiveScanning
+        {
+            get { return HighLogic.CurrentGame.Parameters.CustomParams<OSPParamsAdvanced>().RetroactiveScanning; }
+        }
+
+        public static int ProcessingLoad
+        {
+            get { return HighLogic.CurrentGame.Parameters.CustomParams<OSPParamsAdvanced>().ProcessingLoad; }
         }
 
         public static double MinAltitudeFactor
@@ -87,7 +103,7 @@ namespace OrbitalSurveyPlus
 
         public static double MaxAltitudeAbsolute
         {
-            get { return 15000000d; }
+            get { return 1500000d; }
         }
 
         //DATA ARRAY SIZE CONSTANT DIVISOR
@@ -169,14 +185,42 @@ namespace OrbitalSurveyPlus
             return ratio * 90;
         }
 
+        public static double MercatorScaleFactor(double latitude)
+        {
+            return 1 / Math.Cos(DegreesToRadians(latitude));
+        }
+
         public static bool withinDistance(double x1, double y1, double x2, double y2, double dist)
         {
             return ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)) <= dist * dist;
         }
 
-        public static void Log(String log)
+        public static double ClampLongitude(double lon)
+        {
+            //clamps longitude to standard, between -180 and 180
+            lon += 180;
+            lon %= 360;
+            lon -= 180;
+            return lon;
+        }
+
+        public static double ClampLatitude(double lat)
+        {
+            //clamps latitude to standard, between -90 and 90
+            lat += 90;
+            lat %= 180;
+            lat -= 90;
+            return lat;
+        }
+
+        public static void Log(string log)
         {
             PDebug.Log("[OrbitalSurveyPlus] " + log);
+        }
+
+        public static double DegreesToRadians(double degrees)
+        {
+            return degrees * Math.PI / 180;
         }
 
         public static double ScanMinimumAltitude(CelestialBody body)
@@ -193,10 +237,16 @@ namespace OrbitalSurveyPlus
 
         public static string DistanceToString(double dist)
         {
-            if (dist < 10000)        return String.Format("{0:0.00}m", dist);
-            if (dist < 10000000)     return String.Format("{0:0.00}km", dist/1000);
-            if (dist < 10000000000)  return String.Format("{0:0.00}Mm", dist / 1000000);
-            return String.Format("{0:0.00}Gm", dist / 1000000000);
+            if (dist < 10000)        return String.Format("{0:0.##}m", dist);
+            if (dist < 10000000)     return String.Format("{0:0.##}km", dist/1000);
+            if (dist < 10000000000)  return String.Format("{0:0.##}Mm", dist / 1000000);
+            return String.Format("{0:0.##}Gm", dist / 1000000000);
+        }
+
+        public static bool BodyCanBeScanned(CelestialBody body)
+        {
+            if (body.BiomeMap == null) return false;
+            return true;
         }
 
         public static Color32[] GetPixels32FromBiomeMap(CelestialBody body, out int width, out int height)
@@ -279,7 +329,7 @@ namespace OrbitalSurveyPlus
                 case "1110": return 'E';
                 case "1111": return 'F';
             }
-            OSPGlobal.Log("ERROR: conversion from binary string to hex string got weird input!");
+            OSPGlobal.Log("ERROR: conversion from binary string to hex string got weird input: " + bin);
             return '0';
         }
 
@@ -304,7 +354,7 @@ namespace OrbitalSurveyPlus
                 case 'E': case 'e': return "1110";
                 case 'F': case 'f': return "1111";
             }
-            OSPGlobal.Log("ERROR: conversion from hex string to binary string on scan data serializaion got weird input!");
+            OSPGlobal.Log("ERROR: conversion from hex string to binary string on scan data serializaion got weird input: " + hex);
             return "0000";
         }
 
