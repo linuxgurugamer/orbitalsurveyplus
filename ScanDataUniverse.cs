@@ -59,6 +59,15 @@ namespace OrbitalSurveyPlus
                         height = int.Parse(heightValue);
 
                         bodyScanData = new ScanDataBody(body, width, height);
+
+                        //make warning message if saved array size is legacy
+                        int checkWidth = 0;
+                        int checkHeight = 0;
+                        OSPGlobal.GetScanDataArraySize(body, out checkWidth, out checkHeight);
+                        if (width != checkWidth || height != checkHeight)
+                        {
+                            OSPGlobal.Log("WARNING: Saved data size for " + body.name + " is incorrect, this could be from an older verion of OSP - saved size will be used regardless");
+                        }
                     }
                     else
                     {

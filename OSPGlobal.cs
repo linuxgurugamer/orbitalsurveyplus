@@ -13,9 +13,9 @@ namespace OrbitalSurveyPlus
         public const int VERSION_MAJOR = 2;
         public const int VERSION_MINOR = 3;
         public const int VERSION_PATCH = 2;
-        public const int VERSION_DEV = 1;
+        public const int VERSION_DEV = 2;
         public const string VERSION_KSP = "1.2";
-        public static readonly DateTime VERSION_DATE = new DateTime(2016, 12, 11);
+        public static readonly DateTime VERSION_DATE = new DateTime(2017, 3, 5);
 
         public static readonly string VERSION_DEV_STRING =
             VERSION_DEV > 0 ? " (dev " + VERSION_DEV + ")" : "";
@@ -106,15 +106,38 @@ namespace OrbitalSurveyPlus
             get { return 1500000d; }
         }
 
-        //DATA ARRAY SIZE CONSTANT DIVISOR
+        //DATA ARRAY CONSTANTS
+        public const double KERBIN_RADIUS = 600000;
         public const double SCAN_DATA_WIDTH_DIVISOR = 25; //this makes kerbin's data array 300 width, 150 height
         public const double SCAN_DATA_MITS_DIVISOR = 50000; //this makes kerbin's total scanned data 90 mits
 
         //STATIC METHODS
+        public static CelestialBody GetHomeWorld()
+        {
+            foreach (CelestialBody body in FlightGlobals.Bodies)
+            {
+                if (body.isHomeWorld) return body;
+            }
+
+            Log("ERROR: could not find any home world!");
+            return null;
+        }
+
+        public static double GetScaleRatio()
+        {
+            double homeWorldRadius = GetHomeWorld().Radius;
+            return KERBIN_RADIUS / homeWorldRadius;
+        }
+
+        public static double GetScaledRadius(CelestialBody body)
+        {
+            return body.Radius * GetScaleRatio();
+        }
+
         public static void GetScanDataArraySize(CelestialBody body, out int width, out int height)
         {
             //width based on body's circumference (2*pi*r), divided by a constant ratio
-            double radiusKm = body.Radius / 1000;
+            double radiusKm = GetScaledRadius(body) / 1000;
             height = (int)((2d * Math.PI * radiusKm) / SCAN_DATA_WIDTH_DIVISOR);
             if (height < 10) height = 10; //for tiny planets (ahem, gilly...) this makes the data array way too small, so make it a minimum here
             width = height * 2;
@@ -123,8 +146,8 @@ namespace OrbitalSurveyPlus
         public static float GetScanDataTotalMits(CelestialBody body)
         {
             //based on surface area
-            double radiusKm = body.Radius / 1000;
-            int mits = (int)((4d * Math.PI * radiusKm * radiusKm)/ SCAN_DATA_MITS_DIVISOR);
+            double radiusKm = GetScaledRadius(body) / 1000;
+            int mits = (int)((4d * Math.PI * radiusKm * radiusKm) / SCAN_DATA_MITS_DIVISOR);
 
             //make it a minimum of 5 mits (minmus and gilly would have 0 otherwise)
             if (mits < 5) mits = 5;
