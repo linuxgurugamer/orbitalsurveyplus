@@ -111,12 +111,24 @@ namespace OrbitalSurveyPlus
         public const double SCAN_DATA_WIDTH_DIVISOR = 25; //this makes kerbin's data array 300 width, 150 height
         public const double SCAN_DATA_MITS_DIVISOR = 50000; //this makes kerbin's total scanned data 90 mits
 
-        //STATIC METHODS
+        //PLANET INFORMATION CACHES
+        private static CelestialBody CachedHomeworld = null;
+        private static double CachedScaleRatio = 0;
+        private static Dictionary<int, CelestialBodyInfo> CachedBodyInfo = new Dictionary<int, CelestialBodyInfo>();
+
+        //STATIC METHODS for accessing cached calculations and such
+        //some hoops have been jumped through to limit tedius calculations from being performed often (calculations are only ran once and then saved off)
         public static CelestialBody GetHomeWorld()
         {
+            if (CachedHomeworld != null) return CachedHomeworld;
+
             foreach (CelestialBody body in FlightGlobals.Bodies)
             {
-                if (body.isHomeWorld) return body;
+                if (body.isHomeWorld)
+                {
+                    CachedHomeworld = body;
+                    return body;
+                }
             }
 
             Log("ERROR: could not find any home world!");
@@ -125,8 +137,13 @@ namespace OrbitalSurveyPlus
 
         public static double GetScaleRatio()
         {
-            double homeWorldRadius = GetHomeWorld().Radius;
-            return KERBIN_RADIUS / homeWorldRadius;
+            if (CachedScaleRatio == 0)
+            {
+                CelestialBody homeworld = GetHomeWorld();
+                if (homeworld == null) return 1;
+                CachedScaleRatio = KERBIN_RADIUS / homeworld.Radius;
+            }
+            return CachedScaleRatio;
         }
 
         public static double GetScaledRadius(CelestialBody body)
@@ -134,16 +151,46 @@ namespace OrbitalSurveyPlus
             return body.Radius * GetScaleRatio();
         }
 
+        private static CelestialBodyInfo GetCachedBodyInfo(CelestialBody body)
+        {
+            //gets cached objects holding calculations on data array size and total mits for bodies
+            //if info doesn't exist yet, calcualations are ran and an info object is created (and cached)
+
+            CelestialBodyInfo info;
+            bool success = CachedBodyInfo.TryGetValue(body.flightGlobalsIndex, out info);
+
+            if (!success)
+            {
+                info = new CelestialBodyInfo(body);
+                CachedBodyInfo.Add(body.flightGlobalsIndex, info);
+            }
+
+            return info;
+        }
+
         public static void GetScanDataArraySize(CelestialBody body, out int width, out int height)
+        {
+            CelestialBodyInfo info = GetCachedBodyInfo(body);
+            width = info.DataWidth;
+            height = info.DataHeight;
+        }
+
+        public static void CalculateScanDataArraySize(CelestialBody body, out int width, out int height)
         {
             //width based on body's circumference (2*pi*r), divided by a constant ratio
             double radiusKm = GetScaledRadius(body) / 1000;
-            height = (int)((2d * Math.PI * radiusKm) / SCAN_DATA_WIDTH_DIVISOR);
-            if (height < 10) height = 10; //for tiny planets (ahem, gilly...) this makes the data array way too small, so make it a minimum here
-            width = height * 2;
+            height = (int)((2d * Math.PI* radiusKm) / SCAN_DATA_WIDTH_DIVISOR);
+            if (height< 10) height = 10; //for tiny planets (ahem, gilly...) this makes the data array way too small, so make it a minimum here
+            width = height* 2;
         }
 
         public static float GetScanDataTotalMits(CelestialBody body)
+        {
+            CelestialBodyInfo info = GetCachedBodyInfo(body);
+            return info.TotalMits;
+        }
+
+        public static float CalculateScanDataTotalMits(CelestialBody body)
         {
             //based on surface area
             double radiusKm = GetScaledRadius(body) / 1000;
@@ -159,6 +206,7 @@ namespace OrbitalSurveyPlus
             return mits;
         }
 
+        //STATIC METHODS to do other stuff
         public static int longitudeToX(double lon, int width)
         {
             //lon starts out between -180 and 180
@@ -394,6 +442,36 @@ namespace OrbitalSurveyPlus
                 }
             }
             return snapshot;
+        }
+
+        private class CelestialBodyInfo
+        {
+            //this is mainly a data bucket for cached values from tedius calculations we only want to run once
+
+            public CelestialBody Body { get; set; }
+            public int DataWidth { get; set; }
+            public int DataHeight { get; set; }
+            public float TotalMits { get; set; }
+
+            public CelestialBodyInfo(CelestialBody body)
+            {
+                Body = body;
+                CalculateDataDimensions();
+                CalculateTotalMits();
+            }
+
+            public void CalculateDataDimensions()
+            {
+                int width, height;
+                CalculateScanDataArraySize(Body, out width, out height);
+                DataWidth = width;
+                DataHeight = height;
+            }
+
+            public void CalculateTotalMits()
+            {
+                TotalMits = CalculateScanDataTotalMits(Body);
+            }
         }
     }
 }
