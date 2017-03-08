@@ -159,7 +159,6 @@ namespace OrbitalSurveyPlus
                         CachedLargestWorld = body;
                     }
                 }
-                Log("Largest body determined to be " + CachedLargestWorld.name);
             }
             return CachedLargestWorld;
         }
@@ -177,7 +176,6 @@ namespace OrbitalSurveyPlus
                         CachedSmallestWorld = body;
                     }
                 }
-                Log("Smallest body determined to be " + CachedSmallestWorld.name);
             }
             return CachedSmallestWorld;
         }

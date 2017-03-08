@@ -125,7 +125,7 @@ namespace OrbitalSurveyPlus
                     freshStart = false;
                     currentBody = vessel.mainBody;
                     SetAltitudeHelp();
-                    UpdateScanInfo();
+                    UpdateScanInfo(true);
                     SetUIVisibility();
                     if (OSPGlobal.ExtendedSurvey) DisableStockSurveyor();                    
                 }
@@ -134,7 +134,7 @@ namespace OrbitalSurveyPlus
                 {
                     currentBody = vessel.mainBody;
                     SetAltitudeHelp();
-                    UpdateScanInfo();
+                    UpdateScanInfo(true);
                 }
             }
         }
@@ -147,7 +147,7 @@ namespace OrbitalSurveyPlus
             if (activated)
             {
                 scanStatus = STATUS_OFF;
-                UpdateScanInfo();
+                UpdateScanInfo(false);
 
                 if (scannerOn)
                 {
@@ -291,9 +291,10 @@ namespace OrbitalSurveyPlus
             Fields["maxAltitude"].guiName = "Max Altitude (" + vessel.mainBody.name + ")";
         }
 
-        private void UpdateScanInfo()
+        private void UpdateScanInfo(bool forceUpdate)
         {
-            if (lastScanPct == GetScanPercentCurrentBody()) return;
+            if (!forceUpdate && lastScanPct == GetScanPercentCurrentBody()) return;
+
             lastScanPct = GetScanPercentCurrentBody();
             float mitsAvailable = GetAvailableMitsCurrentBody();
 
@@ -462,6 +463,7 @@ namespace OrbitalSurveyPlus
                 //reset transmit stuff
                 lastTransmitBodyData = null;
                 SetAllOSPModulesTransmitting(false);
+                UpdateScanInfoAll(true);
             }
             
         }
@@ -501,6 +503,15 @@ namespace OrbitalSurveyPlus
                 osp.SetUIVisibility();
             }
         } 
+
+        private void UpdateScanInfoAll(bool forceUpdate)
+        {
+            List<ModuleOrbitalSurveyorPlus> ospList = vessel.FindPartModulesImplementing<ModuleOrbitalSurveyorPlus>();
+            foreach (ModuleOrbitalSurveyorPlus osp in ospList)
+            {
+                osp.UpdateScanInfo(forceUpdate);
+            }
+        }
     }
 }
 

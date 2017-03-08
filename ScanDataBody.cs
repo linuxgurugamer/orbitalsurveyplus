@@ -124,7 +124,7 @@ namespace OrbitalSurveyPlus
             else
             {
                 LoadArrayFromString(ref ScannedMap, serializedHex);
-                ScanPercent = GetScanPercent();
+                UpdateScanPercent();
             }
             
         }
@@ -270,7 +270,7 @@ namespace OrbitalSurveyPlus
             }
             else
             {
-                ScanPercent = GetScanPercent();
+                UpdateScanPercent();
             }
 
         }
@@ -297,9 +297,9 @@ namespace OrbitalSurveyPlus
             }
         }
 
-        public double GetScanPercent()
+        public void UpdateScanPercent()
         {
-            return GetCoveragePercent(ScannedMap);
+            ScanPercent = GetCoveragePercent(ScannedMap);
         }
 
         public float GetAvailableMits()
