@@ -13,7 +13,7 @@ namespace OrbitalSurveyPlus
         public const int VERSION_MAJOR = 2;
         public const int VERSION_MINOR = 3;
         public const int VERSION_PATCH = 2;
-        public const int VERSION_DEV = 2;
+        public const int VERSION_DEV = 3;
         public const string VERSION_KSP = "1.2";
         public static readonly DateTime VERSION_DATE = new DateTime(2017, 3, 5);
 
@@ -93,7 +93,16 @@ namespace OrbitalSurveyPlus
 
         public static double MinAltitudeAbsolute
         {
-            get { return 25000d; }
+            get
+            {
+                if (CachedMinAltitudeAbsolute == 0)
+                {
+                    CelestialBody smallestWorld = GetSmallestWorld();
+                    double smallScaleRatio = smallestWorld.Radius / GILLY_RADIUS;
+                    CachedMinAltitudeAbsolute = MIN_ALT_ABSOLUTE * smallScaleRatio;
+                }
+                return CachedMinAltitudeAbsolute; 
+            }
         }
 
         public static double MaxAltitudeFactor
@@ -103,53 +112,113 @@ namespace OrbitalSurveyPlus
 
         public static double MaxAltitudeAbsolute
         {
-            get { return 1500000d; }
+            get
+            {
+                if (CachedMaxAltitudeAbsolute == 0)
+                {
+                    CelestialBody largestWorld = GetLargestWorld();
+                    CachedMaxAltitudeAbsolute = MAX_ALT_ABSOLUTE * GetScaleRatio();                   
+                }
+                return CachedMaxAltitudeAbsolute;
+            }
         }
 
+        //Min/Max Altitude Private Values
+        private const double MIN_ALT_ABSOLUTE = 25000d;        
+        private const double MAX_ALT_ABSOLUTE = 1500000d;
+        private static double CachedMinAltitudeAbsolute = 0d;
+        private static double CachedMaxAltitudeAbsolute = 0d;
+
         //DATA ARRAY CONSTANTS
-        public const double KERBIN_RADIUS = 600000;
-        public const double SCAN_DATA_WIDTH_DIVISOR = 25; //this makes kerbin's data array 300 width, 150 height
-        public const double SCAN_DATA_MITS_DIVISOR = 50000; //this makes kerbin's total scanned data 90 mits
+        public const double KERBIN_RADIUS = 600000d;
+        public const double EVE_RADIUS = 700000d;
+        public const double GILLY_RADIUS = 13000d;
+        public const double SCAN_DATA_WIDTH_DIVISOR = 25d; //this makes kerbin's data array 300 width, 150 height; Eve's data array 350 width, 175 height (Eve being the largest scannable world)
+        public const double SCAN_DATA_MITS_DIVISOR = 50000d; //this makes kerbin's total scanned data 90 mits
 
         //PLANET INFORMATION CACHES
-        private static CelestialBody CachedHomeworld = null;
+        private static CelestialBody CachedLargestWorld = null;
+        private static CelestialBody CachedSmallestWorld = null;
         private static double CachedScaleRatio = 0;
         private static Dictionary<int, CelestialBodyInfo> CachedBodyInfo = new Dictionary<int, CelestialBodyInfo>();
 
         //STATIC METHODS for accessing cached calculations and such
         //some hoops have been jumped through to limit tedius calculations from being performed often (calculations are only ran once and then saved off)
-        public static CelestialBody GetHomeWorld()
+        //I've tried to get this as ambiguous as possible (using largest world and smallest world to scale stuff) so that OSP can work with mods like RSS as well as with stock
+        //according to these calculations, the largest scannable body (scannable = can land on it) will have a data array of 350x175, and all other bodies will use that as reference
+        public static CelestialBody GetLargestWorld()
         {
-            if (CachedHomeworld != null) return CachedHomeworld;
-
-            foreach (CelestialBody body in FlightGlobals.Bodies)
+            if (CachedLargestWorld == null)
             {
-                if (body.isHomeWorld)
+                double largestRadius = 0d;
+                foreach (CelestialBody body in FlightGlobals.Bodies)
                 {
-                    CachedHomeworld = body;
-                    return body;
+                    if (body.Radius > largestRadius && BodyCanBeScanned(body))
+                    {
+                        largestRadius = body.Radius;
+                        CachedLargestWorld = body;
+                    }
                 }
+                Log("Largest body determined to be " + CachedLargestWorld.name);
             }
+            return CachedLargestWorld;
+        }
 
-            Log("ERROR: could not find any home world!");
-            return null;
+        public static CelestialBody GetSmallestWorld()
+        {
+            if (CachedSmallestWorld == null)
+            {
+                double smallestRadius = GetLargestWorld().Radius;
+                foreach (CelestialBody body in FlightGlobals.Bodies)
+                {
+                    if (body.Radius < smallestRadius && BodyCanBeScanned(body))
+                    {
+                        smallestRadius = body.Radius;
+                        CachedSmallestWorld = body;
+                    }
+                }
+                Log("Smallest body determined to be " + CachedSmallestWorld.name);
+            }
+            return CachedSmallestWorld;
         }
 
         public static double GetScaleRatio()
         {
+            //scale ratio is currently based off of largest scannable world
             if (CachedScaleRatio == 0)
             {
-                CelestialBody homeworld = GetHomeWorld();
-                if (homeworld == null) return 1;
-                CachedScaleRatio = KERBIN_RADIUS / homeworld.Radius;
+                CelestialBody largestWorld = GetLargestWorld();
+                CachedScaleRatio = largestWorld.Radius / EVE_RADIUS;
             }
             return CachedScaleRatio;
         }
 
-        public static double GetScaledRadius(CelestialBody body)
+        public static void GetScanDataArraySize(CelestialBody body, out int width, out int height)
         {
-            return body.Radius * GetScaleRatio();
+            CelestialBodyInfo info = GetCachedBodyInfo(body);
+            width = info.DataWidth;
+            height = info.DataHeight;
         }
+
+        public static float GetScanDataTotalMits(CelestialBody body)
+        {
+            CelestialBodyInfo info = GetCachedBodyInfo(body);
+            return info.TotalMits;
+        }
+
+        public static double ScanMinimumAltitude(CelestialBody body)
+        {
+            CelestialBodyInfo info = GetCachedBodyInfo(body);
+            return info.MinScanAltitude;
+        }
+
+        public static double ScanMaximumAltitude(CelestialBody body)
+        {
+            CelestialBodyInfo info = GetCachedBodyInfo(body);
+            return info.MaxScanAltitude;
+        }
+
+        //Calculate methods for re-running the math to find out celestial body information and getting cached body info
 
         private static CelestialBodyInfo GetCachedBodyInfo(CelestialBody body)
         {
@@ -168,32 +237,21 @@ namespace OrbitalSurveyPlus
             return info;
         }
 
-        public static void GetScanDataArraySize(CelestialBody body, out int width, out int height)
-        {
-            CelestialBodyInfo info = GetCachedBodyInfo(body);
-            width = info.DataWidth;
-            height = info.DataHeight;
-        }
-
         public static void CalculateScanDataArraySize(CelestialBody body, out int width, out int height)
         {
             //width based on body's circumference (2*pi*r), divided by a constant ratio
-            double radiusKm = GetScaledRadius(body) / 1000;
-            height = (int)((2d * Math.PI* radiusKm) / SCAN_DATA_WIDTH_DIVISOR);
-            if (height< 10) height = 10; //for tiny planets (ahem, gilly...) this makes the data array way too small, so make it a minimum here
-            width = height* 2;
-        }
-
-        public static float GetScanDataTotalMits(CelestialBody body)
-        {
-            CelestialBodyInfo info = GetCachedBodyInfo(body);
-            return info.TotalMits;
+            double radius = body.Radius / GetScaleRatio();
+            double radiusKm = radius / 1000;
+            height = (int)((2d * Math.PI * radiusKm) / SCAN_DATA_WIDTH_DIVISOR);
+            if (height < 10) height = 10; //for tiny planets (ahem, gilly...) this makes the data array way too small, so make it a minimum here
+            width = height * 2;
         }
 
         public static float CalculateScanDataTotalMits(CelestialBody body)
         {
             //based on surface area
-            double radiusKm = GetScaledRadius(body) / 1000;
+            double radius = body.Radius / GetScaleRatio();
+            double radiusKm = radius / 1000;
             int mits = (int)((4d * Math.PI * radiusKm * radiusKm) / SCAN_DATA_MITS_DIVISOR);
 
             //make it a minimum of 5 mits (minmus and gilly would have 0 otherwise)
@@ -204,6 +262,18 @@ namespace OrbitalSurveyPlus
             mits = mits + 1;
 
             return mits;
+        }
+
+        public static double CalculateScanMinimumAltitude(CelestialBody body)
+        {
+            double minAltitude = Math.Max(body.Radius * MinAltitudeFactor, MinAltitudeAbsolute);
+            return minAltitude;
+        }
+
+        public static double CalculateScanMaximumAltitude(CelestialBody body)
+        {
+            double maxAltitude = Math.Min(body.Radius * MaxAltitudeFactor, MaxAltitudeAbsolute);
+            return maxAltitude;
         }
 
         //STATIC METHODS to do other stuff
@@ -294,18 +364,6 @@ namespace OrbitalSurveyPlus
             return degrees * Math.PI / 180;
         }
 
-        public static double ScanMinimumAltitude(CelestialBody body)
-        {
-            double minAltitude = Math.Max(body.Radius * MinAltitudeFactor, MinAltitudeAbsolute);
-            return minAltitude;
-        }
-
-        public static double ScanMaximumAltitude(CelestialBody body)
-        {
-            double maxAltitude = Math.Min(body.Radius * MaxAltitudeFactor, MaxAltitudeAbsolute);
-            return maxAltitude;
-        }
-
         public static string DistanceToString(double dist)
         {
             if (dist < 10000)        return String.Format("{0:0.##}m", dist);
@@ -316,7 +374,7 @@ namespace OrbitalSurveyPlus
 
         public static bool BodyCanBeScanned(CelestialBody body)
         {
-            if (body.BiomeMap == null) return false;
+            if (body.BiomeMap == null || !body.hasSolidSurface) return false;
             return true;
         }
 
@@ -452,12 +510,16 @@ namespace OrbitalSurveyPlus
             public int DataWidth { get; set; }
             public int DataHeight { get; set; }
             public float TotalMits { get; set; }
+            public double MinScanAltitude { get; set; }
+            public double MaxScanAltitude { get; set; }
 
             public CelestialBodyInfo(CelestialBody body)
             {
                 Body = body;
                 CalculateDataDimensions();
                 CalculateTotalMits();
+                MinScanAltitude = CalculateScanMinimumAltitude(body);
+                MaxScanAltitude = CalculateScanMaximumAltitude(body);
             }
 
             public void CalculateDataDimensions()
