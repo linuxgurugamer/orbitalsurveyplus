@@ -47,6 +47,9 @@ namespace OrbitalSurveyPlus
             set;
         }
 
+        //private globals for calculations
+        private double totalArea = 0;
+
         //---------------------------------------------------------------------------------------------
         //Constructor, Load, Save, etc. ---------------------------------------------------------------
         //---------------------------------------------------------------------------------------------
@@ -93,6 +96,9 @@ namespace OrbitalSurveyPlus
             //set initial values for how much total data this planet's surface is and how much has been claimed
             TotalMits = OSPGlobal.GetScanDataTotalMits(Body);
             MitsGleaned = 0;
+
+            //get total psuedo-area for coverage calculations
+            totalArea = GetTotalGlobeArea(Width, Height);
         }
 
         public void LoadScannedMap(string serializedHex)
@@ -251,8 +257,16 @@ namespace OrbitalSurveyPlus
                         //sanity check
                         if (x >= 0 && x < Width && y >= 0 && y < Height)
                         {
-                            //update point
-                            ScannedMap[x, y] = isScanned;
+                            if (ScannedMap[x, y] != isScanned)
+                            {
+                                //update point in array
+                                ScannedMap[x, y] = isScanned;
+
+                                //update scan percent as we go
+                                double area = GetCellGlobeArea(y, Height);
+                                double pctChange = isScanned ? (area / totalArea) : -(area / totalArea);
+                                ScanPercent += pctChange;               
+                            }
                         }
                         else
                         {
@@ -263,14 +277,10 @@ namespace OrbitalSurveyPlus
             }            
 
             //if scan percent is >=95% (default), give 'em the rest!
-            if (ScanPercent >= OSPGlobal.ScanAutoCompleteThreshold)
+            if (ScanPercent < 1 && ScanPercent >= OSPGlobal.ScanAutoCompleteThreshold)
             {
                 FillArray(ref ScannedMap, true);
                 ScanPercent = 1;
-            }
-            else
-            {
-                UpdateScanPercent();
             }
 
         }
@@ -420,6 +430,9 @@ namespace OrbitalSurveyPlus
             }
         }
 
+        /*
+         * returns the amount of scanned globe area of an array that represents a globe map, where cells are 1x1 at the equator and scale at higher latitudes
+         */
         private double GetCoveragePercent(bool[,] array)
         {
             int w = array.GetLength(0);
@@ -430,9 +443,7 @@ namespace OrbitalSurveyPlus
 
             for (int j = 0; j < h; j++)
             {
-                double lat = OSPGlobal.YToLatitude(j, h);
-                double scale = OSPGlobal.MercatorScaleFactor(lat);
-                double area = (1 / scale); //each area is "1x1", but the width must be scaled
+                double area = GetCellGlobeArea(j, h); //each area is "1x1", but the width must be scaled
                 for (int i = 0; i < w; i++)
                 {
                     total += area;
@@ -442,6 +453,36 @@ namespace OrbitalSurveyPlus
 
             return totalCovered / total;
         }
+        
+        /*
+         * returns the total area of an array that represents a gobe map, where the cells are 1x1 at the equator and scale at high latitudes
+         */
+        private double GetTotalGlobeArea(int width, int height)
+        {
+            double total = 0;
+
+            for (int j = 0; j < height; j++)
+            {
+                double area = GetCellGlobeArea(j, height); //each area is "1x1", but the width must be scaled
+                for (int i = 0; i < width; i++)
+                {
+                    total += area;
+                }
+            }
+
+            return total;
+        }   
+        
+        /*
+         * returns the total unit area of a grid cell on an array representing a globe map
+         */
+        private double GetCellGlobeArea(int y, int totalHeight)
+        {
+            //the width of cells must be scaled at different latitudes, cells at the equator are 1x1 (unit cells)
+            double lat = OSPGlobal.YToLatitude(y, totalHeight);
+            double scale = OSPGlobal.MercatorScaleFactor(lat);
+            return (1 / scale);
+        }     
 
         private string CompressHexString(string uncompressed)
         {

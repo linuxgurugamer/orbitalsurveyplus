@@ -359,16 +359,34 @@ namespace OrbitalSurveyPlus
             if (moduleStockSurveyor != null)
             {
                 foreach (ModuleOrbitalSurveyor m in moduleStockSurveyor)
+                {
                     m.DisableModule();
+                }
             }
         }
 
         public override string GetInfo()
         {
-            //show electric charge info 
             String s = base.GetInfo();
-            s += "\n\n<b><color=#99ff00ff>Requires:</color></b>";
-            s += "\nElectric Charge: " + ElectricDrain + "/sec.";
+
+            //scan radius
+            s += "Scanning radius: " + ScanRadius + " units";
+
+            //science bonus
+            s += "\n<color=#00ffff>Complete scan science bonus: " + SciBonus + "</color>";
+
+            //altitude information
+            /*  Apparently KSP front-loads all of the GetInfo stuff during startup, so displaying scaled factors here is impossible. Unfortunate!
+            double minFactorDivisor = 1 / OSPGlobal.MinAltitudeFactor;
+            s += "\nMin. Altitude: " + OSPGlobal.MinAltitudeAbsolute;
+            s += "\n     <color=#8a939c>[unless: body.radius / " + minFactorDivisor + " is bigger]</color>";
+            s += "\nMax. Altitude: " + OSPGlobal.MaxAltitudeAbsolute;
+            s += "\n     <color=#8a939c>[unless: body.radius * " + OSPGlobal.MaxAltitudeFactor + " is smaller]</color>";
+            */
+
+            //electric charge
+            s += "\n\n<b><color=#f97306>Requires:</color></b>";
+            s += "\n- Electric Charge: " + ElectricDrain + "/sec.";
             return s;
         }
 

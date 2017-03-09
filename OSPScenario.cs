@@ -361,9 +361,13 @@ namespace OrbitalSurveyPlus
                     int x2 = (int) Math.Round(OSPGlobal.longitudeToX(lastReq.longitude, width) / xscale);
                     int y2 = OSPGlobal.latitudeToY(lastReq.latitude, height);
 
+                    /* throwing out scans that are not a certain distance from each other caused bad looking effects
                     //if distance is less than scan radius / 4, throw it out
                     int distCheck = Math.Max(scanRadius / 4, 1);
                     if (OSPGlobal.withinDistance(x1, y1, x2, y2, distCheck)) return;
+                    */
+                    //if they are on the same point, throw it out
+                    if (x1 == x2 && y1 == y2) return;
                 }
             }
 

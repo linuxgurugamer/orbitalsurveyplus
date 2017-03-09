@@ -13,9 +13,9 @@ namespace OrbitalSurveyPlus
         public const int VERSION_MAJOR = 2;
         public const int VERSION_MINOR = 3;
         public const int VERSION_PATCH = 2;
-        public const int VERSION_DEV = 3;
+        public const int VERSION_DEV = 0;
         public const string VERSION_KSP = "1.2";
-        public static readonly DateTime VERSION_DATE = new DateTime(2017, 3, 5);
+        public static readonly DateTime VERSION_DATE = new DateTime(2017, 3, 8);
 
         public static readonly string VERSION_DEV_STRING =
             VERSION_DEV > 0 ? " (dev " + VERSION_DEV + ")" : "";
@@ -303,7 +303,7 @@ namespace OrbitalSurveyPlus
             return ratio * 180;
         }
 
-        public static int latitudeToY(double lat, int height)
+        public static int latitudeToY(double lat, int totalHeight)
         {
             //lat starts out between -90 and 90
             //shift to between 0 and 180
@@ -311,7 +311,7 @@ namespace OrbitalSurveyPlus
 
             //find pixel based on scale
             double scale = lat / 180;
-            return (int)Math.Round(scale * height);
+            return (int)Math.Round(scale * totalHeight);
         }
 
         public static double YToLatitude(int y, int height)
