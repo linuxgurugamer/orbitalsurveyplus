@@ -204,6 +204,12 @@ namespace OrbitalSurveyPlus
             double semiMinorAxis2 = semiMinorAxis * semiMinorAxis;
             double semiMajorAxis2 = semiMajorAxis * semiMajorAxis;
 
+            //double check that totalArea has a value, just to be safe
+            if (totalArea == 0)
+            {
+                totalArea = GetTotalGlobeArea(Width, Height);
+            }
+
             //search in a rectangle that encompasses the ellipse and check to see if each point is inside the ellipse
             for (int j = -semiMinorAxis; j <= semiMinorAxis; j++)
             {
