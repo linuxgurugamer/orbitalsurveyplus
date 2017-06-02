@@ -132,7 +132,7 @@ namespace OrbitalSurveyPlus
             if (OSPGlobal.BiomeMapRequiresScan && !ResourceMap.Instance.IsPlanetScanned(body.flightGlobalsIndex))
             {
                 ScreenMessages.PostScreenMessage(String.Format("Biome Map Unavailable: No survey data available for {0}",
-                    body.RevealName()),
+                    body.GetDisplayName()),
                     5.0f, ScreenMessageStyle.UPPER_CENTER);
                 return;
             }

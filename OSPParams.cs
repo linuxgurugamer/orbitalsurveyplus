@@ -19,6 +19,11 @@ namespace OrbitalSurveyPlus
             get{return OSPGlobal.OSP_TITLE;}
         }
 
+        public override string DisplaySection
+        {
+            get { return Section; }
+        }
+
         public override int SectionOrder
         {
             get{return 1;}
@@ -62,6 +67,11 @@ namespace OrbitalSurveyPlus
         public override string Section
         {
             get{return OSPGlobal.OSP_TITLE;}
+        }
+
+        public override string DisplaySection
+        {
+            get { return Section; }
         }
 
         public override int SectionOrder
@@ -130,6 +140,11 @@ namespace OrbitalSurveyPlus
         public override string Section
         {
             get { return OSPGlobal.OSP_TITLE; }
+        }
+
+        public override string DisplaySection
+        {
+            get { return Section; }
         }
 
         public override int SectionOrder
