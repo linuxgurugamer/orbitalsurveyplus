@@ -126,6 +126,9 @@ namespace OrbitalSurveyPlus
                 }
             }
 
+            //Make first pixel shrouded so we can tell easily and quickly which textures have been shrouded
+            newColors[0] = ProduceShroudedPixel();
+
             return newColors;
         }
 
@@ -143,7 +146,7 @@ namespace OrbitalSurveyPlus
             {
                 return;
             }
-            
+
             //get scan body data (could be null)
             ScanDataBody data = GetBodyScanData(body.flightGlobalsIndex);
 
@@ -208,14 +211,15 @@ namespace OrbitalSurveyPlus
         {
             Texture2D overlay = body.ResourceMap;
             if (overlay == null) return true;
-            Color32[] colors = overlay.GetPixels32();
-            Color32 shrouded = ProduceShroudedPixel();
-            foreach (Color32 c in colors)
-            {
-                if (c.Equals(shrouded)) return true;
-            }
-
+            Color32 c = overlay.GetPixel(0, 0);
+            if (c.Equals(ProduceShroudedPixel())) return true;
             return false;
+
+            /* Apparently pulling the Color32 array out was the culprit for slowdown while viewing an overlay *
+            Color32[] colors = overlay.GetPixels32();
+            if (colors[0].Equals(ProduceShroudedPixel())) return true;
+            return false;
+            */
         }
 
         public void LateUpdate()
@@ -227,7 +231,7 @@ namespace OrbitalSurveyPlus
                 {
                     if (body.ResourceMap == null) continue;
                     if (scanData.BodyIsFullyScanned(body.flightGlobalsIndex)) continue;
-                    if (CurrentOverlayIsShrouded(body)) continue;
+                    if (CurrentOverlayIsShrouded(body)) continue;                    
                     ShroudBodyOverlay(body);                  
                 }
             }
