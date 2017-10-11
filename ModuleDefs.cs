@@ -421,7 +421,7 @@ namespace OrbitalSurveyPlus
         {
             //subject ID will hold the instance ID of the module that started the transmission
             string subject = GetOSPScienceSubject();
-            ScienceData sd = new ScienceData(mits, 1, 0, subject, "Orbital survey data from " + body.GetDisplayName(), true);
+            ScienceData sd = new ScienceData(mits, 1, 0, subject, "Orbital survey data from " + body.GetName(), true);
             return sd;
         }
 

@@ -19,7 +19,6 @@ D:\Repositories\OrbitalSurveyPlus\bin\Debug\Assembly-CSharp-firstpass.dll
 D:\Repositories\OrbitalSurveyPlus\bin\Debug\Assembly-CSharp.dll
 D:\Repositories\OrbitalSurveyPlus\bin\Debug\KSPAssets.dll
 D:\Repositories\OrbitalSurveyPlus\bin\Debug\UnityEngine.dll
-D:\Repositories\OrbitalSurveyPlus\bin\Debug\TrackIRUnity.dll
 D:\Repositories\OrbitalSurveyPlus\bin\Debug\UnityEngine.UI.dll
 D:\Repositories\OrbitalSurveyPlus\bin\Debug\Mono.Cecil.dll
 D:\Repositories\OrbitalSurveyPlus\bin\Debug\TDx.TDxInput.dll
@@ -28,3 +27,4 @@ D:\Repositories\OrbitalSurveyPlus\bin\Debug\UnityEngine.xml
 D:\Repositories\OrbitalSurveyPlus\obj\Debug\OrbitalSurveyPlus.csprojResolveAssemblyReference.cache
 D:\Repositories\OrbitalSurveyPlus\obj\Debug\OrbitalSurveyPlus.dll
 D:\Repositories\OrbitalSurveyPlus\obj\Debug\OrbitalSurveyPlus.pdb
+D:\Repositories\OrbitalSurveyPlus\bin\Debug\KSPTrackIR.dll

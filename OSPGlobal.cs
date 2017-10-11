@@ -12,10 +12,10 @@ namespace OrbitalSurveyPlus
         public const string OSP_EMAIL = "altoid287@gmail.com";
         public const int VERSION_MAJOR = 2;
         public const int VERSION_MINOR = 3;
-        public const int VERSION_PATCH = 4;
+        public const int VERSION_PATCH = 5;
         public const int VERSION_DEV = 0;
-        public const string VERSION_KSP = "1.3";
-        public static readonly DateTime VERSION_DATE = new DateTime(2017, 6, 2);
+        public const string VERSION_KSP = "1.3.1";
+        public static readonly DateTime VERSION_DATE = new DateTime(2017, 10, 10);
 
         public static readonly string VERSION_DEV_STRING =
             VERSION_DEV > 0 ? " (dev " + VERSION_DEV + ")" : "";

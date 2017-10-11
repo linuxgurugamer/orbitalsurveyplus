@@ -19,6 +19,9 @@ namespace OrbitalSurveyPlus
             GameEvents.onGUIApplicationLauncherDestroyed.Add(AppLauncherDestroyedCallback);
             GameEvents.onGameSceneLoadRequested.Add(AppLauncherSceneLoadCallback);
 
+            GameEvents.OnMapEntered.Add(MapEnteredCallback);
+            GameEvents.OnMapFocusChange.Add(MapFocusChangeCallback);
+
             //only do this portion once ever
             if (primaryInitialize)
             {
@@ -34,6 +37,9 @@ namespace OrbitalSurveyPlus
             GameEvents.onGUIApplicationLauncherDestroyed.Remove(AppLauncherDestroyedCallback);
             GameEvents.onGameSceneLoadRequested.Remove(AppLauncherSceneLoadCallback);
             AppLauncherRemoveButtons();
+
+            GameEvents.OnMapEntered.Remove(MapEnteredCallback);
+            GameEvents.OnMapFocusChange.Remove(MapFocusChangeCallback);
         }      
 
         public void AppLancherReadyCallback()
@@ -73,12 +79,38 @@ namespace OrbitalSurveyPlus
             }
         }
 
+        public  void MapEnteredCallback()
+        {
+            SetBiomeOverlayButtonVisibility();
+        }
+
+        public void MapFocusChangeCallback(MapObject mapObject)
+        {
+            SetBiomeOverlayButtonVisibility();
+        }
+
         public void AppLauncherRemoveButtons()
         {
             if (appButtonBiomeOverlay != null)
             {
                 ApplicationLauncher.Instance.RemoveModApplication(appButtonBiomeOverlay);
                 appButtonBiomeOverlay = null;
+            }
+        }
+
+        public static void SetBiomeOverlayButtonVisibility()
+        {
+            if (appButtonBiomeOverlay != null)
+            {
+                MapObject focusedObject = MapView.MapCamera.target;
+                if (focusedObject.type == MapObject.ObjectType.CelestialBody)
+                {
+                    appButtonBiomeOverlay.VisibleInScenes = ApplicationLauncher.AppScenes.MAPVIEW | ApplicationLauncher.AppScenes.TRACKSTATION;
+                }
+                else
+                {
+                    appButtonBiomeOverlay.VisibleInScenes = ApplicationLauncher.AppScenes.NEVER;
+                }
             }
         }
 
@@ -132,8 +164,9 @@ namespace OrbitalSurveyPlus
             if (OSPGlobal.BiomeMapRequiresScan && !ResourceMap.Instance.IsPlanetScanned(body.flightGlobalsIndex))
             {
                 ScreenMessages.PostScreenMessage(String.Format("Biome Map Unavailable: No survey data available for {0}",
-                    body.GetDisplayName()),
+                    body.GetName()),
                     5.0f, ScreenMessageStyle.UPPER_CENTER);
+                
                 return;
             }
 
