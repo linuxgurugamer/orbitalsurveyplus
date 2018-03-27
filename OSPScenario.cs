@@ -8,6 +8,7 @@ namespace OrbitalSurveyPlus
     [KSPScenario(ScenarioCreationOptions.AddToAllGames | ScenarioCreationOptions.AddToExistingGames, GameScenes.FLIGHT, GameScenes.TRACKSTATION, GameScenes.SPACECENTER)]
     class OSPScenario : ScenarioModule
     {
+        #region Global Members
         private static ScanDataUniverse scanData = new ScanDataUniverse();
         private static double lastScanTime = 0;
         private static Queue<ScanRequest> scanQueue = new Queue<ScanRequest>();
@@ -16,6 +17,9 @@ namespace OrbitalSurveyPlus
         private static DateTime lastRefresh = DateTime.UtcNow;
 
         private static readonly double AUTO_REFRESH_INTERVAL = 500; //milliseconds between each auto-refresh
+        #endregion
+
+        #region Unity & KSP Functions
 
         public override void OnAwake()
         {
@@ -56,6 +60,10 @@ namespace OrbitalSurveyPlus
             node.AddValue(OSPGlobal.OSPVersionName, OSPGlobal.VERSION_STRING_VERBOSE);
         }
 
+        #endregion
+
+        #region Scan Body Functions
+
         public static ScanDataBody GetBodyScanData(int bodyIndex)
         {
             return scanData.GetBodyScanData(bodyIndex);
@@ -77,11 +85,9 @@ namespace OrbitalSurveyPlus
             }
         }
 
-        public void SceneChangeHook(GameScenes scene)
-        {
-            //this disallows retroactive scanning for the first game update of a new scene, fixing some funky behavior
-            lastScanTime = 0;
-        }
+        #endregion
+
+        #region Overlay Manipulation
 
         public static Color32[] ShroudColor32Array(Color32[] oldColors, int width, int height, ScanDataBody data)
         {
@@ -220,6 +226,16 @@ namespace OrbitalSurveyPlus
             if (colors[0].Equals(ProduceShroudedPixel())) return true;
             return false;
             */
+        }
+
+        #endregion
+
+        #region Scanning Queueing and Background Scanning
+
+        public void SceneChangeHook(GameScenes scene)
+        {
+            //this disallows retroactive scanning for the first game update of a new scene, fixing some funky behavior
+            lastScanTime = 0;
         }
 
         public void LateUpdate()
@@ -404,5 +420,6 @@ namespace OrbitalSurveyPlus
             }
         }
 
+        #endregion
     }
 }

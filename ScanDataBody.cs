@@ -5,6 +5,8 @@ namespace OrbitalSurveyPlus
 {
     class ScanDataBody
     {
+        #region Global Members
+
         private static readonly char TAG_100PERCENT = 'X';
         private static readonly char TAG_COMPRESSION_DELIMITER = ',';
 
@@ -50,6 +52,9 @@ namespace OrbitalSurveyPlus
         //private globals for calculations
         private double totalArea = 0;
 
+        #endregion
+
+        #region Constructor + Loading + Saving
         //---------------------------------------------------------------------------------------------
         //Constructor, Load, Save, etc. ---------------------------------------------------------------
         //---------------------------------------------------------------------------------------------
@@ -157,6 +162,9 @@ namespace OrbitalSurveyPlus
             return SerializeArray(RevealedMap);
         }
 
+        #endregion
+
+        #region Scanning
         //---------------------------------------------------------------------------------------------
         //Public Methods for manipulating and getting scan information --------------------------------
         //---------------------------------------------------------------------------------------------
@@ -344,6 +352,9 @@ namespace OrbitalSurveyPlus
             return ScannedMap[x, y];
         }
 
+        #endregion
+
+        #region Utility
         //---------------------------------------------------------------------------------------------
         //private "utility" methods -------------------------------------------------------------------
         //---------------------------------------------------------------------------------------------
@@ -556,5 +567,7 @@ namespace OrbitalSurveyPlus
 
             return sb.ToString();
         }
+
+        #endregion
     }
 }

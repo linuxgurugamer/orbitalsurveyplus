@@ -6,16 +6,17 @@ namespace OrbitalSurveyPlus
 {
     class OSPGlobal
     {
+        #region Versioning
         //------------ VERSION STUFF -----------------------------------------------------------------------------
         public const string OSP_TITLE = "Orbital Survey Plus";
         public const string OSP_AUTHOR = "Chase Barnes (Wheffle)";
         public const string OSP_EMAIL = "altoid287@gmail.com";
         public const int VERSION_MAJOR = 2;
         public const int VERSION_MINOR = 3;
-        public const int VERSION_PATCH = 5;
+        public const int VERSION_PATCH = 6;
         public const int VERSION_DEV = 0;
-        public const string VERSION_KSP = "1.3.1";
-        public static readonly DateTime VERSION_DATE = new DateTime(2017, 10, 10);
+        public const string VERSION_KSP = "1.4.1";
+        public static readonly DateTime VERSION_DATE = new DateTime(2018, 3, 26);
 
         public static readonly string VERSION_DEV_STRING =
             VERSION_DEV > 0 ? " (dev " + VERSION_DEV + ")" : "";
@@ -27,7 +28,9 @@ namespace OrbitalSurveyPlus
 
         public static readonly string VERSION_STRING_VERBOSE = VERSION_MAJOR + "." + VERSION_MINOR + "." + VERSION_PATCH + VERSION_DEV_STRING;
         //--------------------------------------------------------------------------------------------------------
+        #endregion
 
+        #region Node Names
         //NODE STUFF
         public const string OSPVersionName = "version";
         public const string OSPScanDataNodeName = "OSPScanData";
@@ -36,7 +39,9 @@ namespace OrbitalSurveyPlus
         public const string OSPScannedValueName = "data";
         public const string OSPRevealedValueName = "revealed";
         public const string OSPMitsGleanedValueName = "mitsTransmitted";
+        #endregion
 
+        #region Settings
         //SETTINGS STUFF
         public const string SettingsPath = "GameData/OrbitalSurveyPlus/settings.cfg";
         public const string InfoPath = "GameData/OrbitalSurveyPlus/info.txt";
@@ -122,25 +127,30 @@ namespace OrbitalSurveyPlus
                 return CachedMaxAltitudeAbsolute;
             }
         }
+        #endregion
 
+        #region Constants and Cache Variables
         //Min/Max Altitude Private Values
         private const double MIN_ALT_ABSOLUTE = 25000d;        
         private const double MAX_ALT_ABSOLUTE = 1500000d;
         private static double CachedMinAltitudeAbsolute = 0d;
-        private static double CachedMaxAltitudeAbsolute = 0d;
-
+        private static double CachedMaxAltitudeAbsolute = 0d;        
+        
         //DATA ARRAY CONSTANTS
         public const double KERBIN_RADIUS = 600000d;
         public const double EVE_RADIUS = 700000d;
         public const double GILLY_RADIUS = 13000d;
         public const double SCAN_DATA_WIDTH_DIVISOR = 25d; //this makes kerbin's data array 300 width, 150 height; Eve's data array 350 width, 175 height (Eve being the largest scannable world)
         public const double SCAN_DATA_MITS_DIVISOR = 50000d; //this makes kerbin's total scanned data 90 mits
-
+        
         //PLANET INFORMATION CACHES
         private static CelestialBody CachedLargestWorld = null;
         private static CelestialBody CachedSmallestWorld = null;
         private static double CachedScaleRatio = 0;
         private static Dictionary<int, CelestialBodyInfo> CachedBodyInfo = new Dictionary<int, CelestialBodyInfo>();
+        #endregion
+
+        #region Cached Calculations
 
         //STATIC METHODS for accessing cached calculations and such
         //some hoops have been jumped through to limit tedius calculations from being performed often (calculations are only ran once and then saved off)
@@ -274,7 +284,11 @@ namespace OrbitalSurveyPlus
             return maxAltitude;
         }
 
+        #endregion
+
+        #region Misc Static Methods
         //STATIC METHODS to do other stuff
+
         public static int longitudeToX(double lon, int width)
         {
             //lon starts out between -180 and 180
@@ -533,5 +547,7 @@ namespace OrbitalSurveyPlus
                 TotalMits = CalculateScanDataTotalMits(Body);
             }
         }
+
+        #endregion
     }
 }
